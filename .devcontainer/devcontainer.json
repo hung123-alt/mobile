@@ -1,6 +1,7 @@
 {
   "name": "Flutter",
-  "image": "matspfeiffer/flutter:beta",
+  "image": "ghcr.io/cirruslabs/flutter:3.47.1",
+  "postCreateCommand": "cd cinema_app && flutter pub get",
   "customizations": {
     "vscode": {
       "extensions": [
