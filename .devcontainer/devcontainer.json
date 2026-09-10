@@ -9,5 +9,6 @@
         "GitHub.copilot"
       ]
     }
-  }
+  },
+  "postCreateCommand": "flutter pub get"
 }
