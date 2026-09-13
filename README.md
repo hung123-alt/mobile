@@ -1,5 +1,5 @@
 ### 🎬 Quản lý Dữ liệu Phim (Movie Module)
-
+![alt text](Capture.PNG)
 #### 1. Thiết kế Mô hình Dữ liệu (Data Model)
 Dựa trên lược đồ thực thể (Class Diagram), đối tượng `Movie` đã được mô hình hóa thành Dart class trong ứng dụng Flutter:
 * **Vị trí file:** `lib/models/movie.dart`
