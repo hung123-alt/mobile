@@ -1,40 +1,21 @@
 import 'package:flutter/material.dart';
-import 'models/User.dart';
+import 'models/User.dart';         // Thêm import User
+import 'models/movie_model.dart';  // Import Movies không còn bị báo lỗi thừa nữa
 
-
-var user1 = User();
 void main() {
-  var user1 = User();
-  user1.setUser(1, 'nguyenlethu', 'lethu@gmail.com', '123456');
-  user1.showInfo();
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        // Sửa lỗi cú pháp .fromSeed thành ColorScheme.fromSeed
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
@@ -43,15 +24,6 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
 
   final String title;
 
@@ -62,58 +34,70 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
 
+  // 1. Khởi tạo biến user1 và movie1 ở ngay trong State
+  final user1 = User();
+  
+  final movie1 = Movies(
+    id: 1,
+    title: 'Lật Mặt 7',
+    description: 'Một bộ phim gia đình cảm động.',
+    thumbnail: 'lat_mat_7.jpg',
+    categoryId: 1,
+    countryId: 1,
+    releaseYear: 2024,
+    movieType: 'Tâm lý',
+    status: 'Đang chiếu',
+    createdAt: DateTime.now(),
+    updatedAt: DateTime.now(),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    // 2. Thiết lập dữ liệu cho user1 khi màn hình vừa mở lên
+    user1.setUser(1, 'nguyenlethu', 'lethu@gmail.com', '123456');
+  }
+
   void _incrementCounter() {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
       _counter++;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
+          // Sửa lỗi cú pháp .center thành MainAxisAlignment.center
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text('You have pushed the button this many times:'),
+            
+            // Text hiển thị biến đếm
             Text(
-              'User: ${user1.username} - ${user1.email} - ${user1.role}',
+              '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            
+            const SizedBox(height: 40), // Tạo khoảng trống
+            
+            // 3. Text hiển thị thông tin User
+            Text(
+              'User: ${user1.username} - ${user1.email}',
+              style: const TextStyle(fontSize: 18, color: Colors.blue),
+            ),
+            
+            const SizedBox(height: 10),
+            
+            // 4. Text hiển thị thông tin Movie
+            Text(
+              'Phim: ${movie1.title} (${movie1.releaseYear})',
+              style: const TextStyle(fontSize: 18, color: Colors.red),
             ),
           ],
         ),
