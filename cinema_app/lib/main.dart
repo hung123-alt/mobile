@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
+import 'models/User.dart';
 
+
+var user1 = User();
 void main() {
+  var user1 = User();
+  user1.setUser(1, 'nguyenlethu', 'lethu@gmail.com', '123456');
+  user1.showInfo();
   runApp(const MyApp());
 }
 
@@ -106,7 +112,7 @@ class _MyHomePageState extends State<MyHomePage> {
           children: [
             const Text('You have pushed the button this many times:'),
             Text(
-              '$_counter',
+              'User: ${user1.username} - ${user1.email} - ${user1.role}',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
           ],
