@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'models/User.dart';         // Thêm import User
 import 'models/movie_model.dart';  // Import Movies không còn bị báo lỗi thừa nữa
-
+import 'repositories/phim.dart';
 void main() {
   runApp(const MyApp());
 }
