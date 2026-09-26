@@ -39,5 +39,17 @@
 ## 📐 Yêu cầu 3: Kiến trúc & Design Pattern
 
 ### Cấu trúc thư mục
-lib/ ├── main.dart # Entry point ├── widgets/ │ └── navigation_shell.dart # Bottom Navigation Bar ├── pages/ │ ├── home_page.dart # Trang chủ │ ├── search_page.dart # Tìm kiếm │ ├── category_page.dart # Thể loại │ ├── favorite_page.dart # Yêu thích │ └── profile_page.dart # Tài khoản ├── models/ │ └── movie_model.dart # Model phim └── repositories/ └── movie_repository.dart # Repository pattern
-
+lib/
+├── main.dart                 # Entry point
+├── widgets/
+│   └── navigation_shell.dart # Bottom Navigation Bar
+├── pages/
+│   ├── home_page.dart        # Trang chủ
+│   ├── search_page.dart      # Tìm kiếm
+│   ├── category_page.dart    # Thể loại
+│   ├── favorite_page.dart    # Yêu thích
+│   └── profile_page.dart     # Tài khoản
+├── models/
+│   └── movie_model.dart      # Model phim
+└── repositories/
+    └── movie_repository.dart # Repository pattern
