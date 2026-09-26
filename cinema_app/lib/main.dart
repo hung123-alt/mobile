@@ -11,13 +11,13 @@ class CinemaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Cinema App',
+      title: 'PhimHay24h',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.red),
+        primarySwatch: Colors.red,
         useMaterial3: true,
       ),
-      home: const BottomNavigationPage(title: 'Phenikaa Cinema'),
-      debugShowCheckedModeBanner: false,
+      home: const NavigationShell(),
     );
   }
 }
