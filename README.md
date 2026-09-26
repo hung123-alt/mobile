@@ -39,6 +39,8 @@
 ## 📐 Yêu cầu 3: Kiến trúc & Design Pattern
 
 ### Cấu trúc thư mục
+
+```text
 lib/
 ├── main.dart                 # Entry point
 ├── widgets/
@@ -53,3 +55,4 @@ lib/
 │   └── movie_model.dart      # Model phim
 └── repositories/
     └── movie_repository.dart # Repository pattern
+```
