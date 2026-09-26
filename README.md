@@ -51,3 +51,10 @@ Dựa trên lược đồ thực thể (Class Diagram), đối tượng `User` �
 
 * **User — Favorites (1 - N):** Một người dùng có thể yêu thích nhiều bộ phim (One-to-Many), thông qua bảng trung gian `Favorites` (chứa `userId` và `movieId`).
 * `User` không liên kết trực tiếp với `Movie` hoặc `Category`, mà liên kết gián tiếp qua các bảng trung gian: `Ratings`, `Comments`, `Favorites`, `WatchHistory`, `Watchlist` — mỗi bảng đều chứa khóa ngoại `userId` tham chiếu đến `User`.
+
+
+#### LUỒNG CÔNG VIỆC CỦA CÁC MÀN HÌNH
+
+
+#### Phân công
+**Bùi Quang Hưng** : phát triển màn hình homePage

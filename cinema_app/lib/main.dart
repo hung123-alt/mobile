@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'models/User.dart';         // Thêm import User
 import 'models/movie_model.dart';  // Import Movies không còn bị báo lỗi thừa nữa
 import 'repositories/phim.dart';
+import 'screens/home.dart';
 void main() {
   runApp(const MyApp());
 }
@@ -12,12 +13,16 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
+
+      title: 'PhimHay24h',
+
       theme: ThemeData(
-        // Sửa lỗi cú pháp .fromSeed thành ColorScheme.fromSeed
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        fontFamily: 'Arial',
+        useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+
+      home: const HomePage(),
     );
   }
 }
