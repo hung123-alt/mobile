@@ -1,7 +1,6 @@
-class Movies{
-  final int id;
-  final String title;
-  final String? description;
+import 'generic_entity.dart';
+
+class Movies extends GenericEntity<int> {
   final String thumbnail;
   final int categoryId;
   final int countryId;
@@ -11,11 +10,10 @@ class Movies{
   final DateTime createdAt;
   final DateTime updatedAt;
 
-
   const Movies({
-    required this.id,
-    required this.title,
-    required this.description,
+    required int id,
+    required String title,
+    required String? description,
     required this.thumbnail,
     required this.categoryId,
     required this.countryId,
@@ -24,30 +22,37 @@ class Movies{
     required this.status,
     required this.createdAt,
     required this.updatedAt,
-  });
+  }) : super(
+          id: id,
+          name: title,
+          description: description,
+        );
 
-  //Chuyển data từ Map sang Object Movies --> DB
+  // Giữ lại tên title để tương thích với code cũ
+  String get title => name;
+
+  // Chuyển Map thành đối tượng Movies
   factory Movies.fromMap(Map<String, dynamic> map) {
     return Movies(
-      id: map['id'] as int,
+      id: (map['id'] as num).toInt(),
       title: map['title'] as String,
-      description: map['description'] as String,
+      description: map['description'] as String?,
       thumbnail: map['thumbnail'] as String,
-      categoryId: map['categoryId'] as int,
-      countryId: map['countryId'] as int,
-      releaseYear: map['releaseYear'] as int,
+      categoryId: (map['categoryId'] as num).toInt(),
+      countryId: (map['countryId'] as num).toInt(),
+      releaseYear: (map['releaseYear'] as num).toInt(),
       movieType: map['movieType'] as String,
-      status: map['status'] as String,
+      status: map['status'] as String?,
       createdAt: DateTime.parse(map['createdAt'] as String),
       updatedAt: DateTime.parse(map['updatedAt'] as String),
     );
   }
 
-  //Chuyển data từ Object Movies sang Map --> local
+  // Chuyển đối tượng Movies thành Map
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'title': title,
+      'title': name,
       'description': description,
       'thumbnail': thumbnail,
       'categoryId': categoryId,
@@ -58,5 +63,11 @@ class Movies{
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
-  } 
+  }
+
+  // Ghi đè phương thức mô tả chung
+  @override
+  String describe() {
+    return '$name ($releaseYear)';
+  }
 }

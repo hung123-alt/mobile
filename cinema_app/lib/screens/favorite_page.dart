@@ -1,38 +1,48 @@
 import 'package:flutter/material.dart';
 
-class FavoritePage extends StatelessWidget {
-  const FavoritePage({super.key});
+import 'base_screen.dart';
+
+class FavoritePage extends BaseScreen<List<Map<String, String>>> {
+  const FavoritePage({super.key})
+    : super(
+        data: const [
+          {'title': 'Doraemon', 'genre': 'Hoạt hình', 'year': '2024'},
+          {'title': 'Tây Du Ký', 'genre': 'Phiêu lưu', 'year': '1986'},
+          {'title': 'Avengers', 'genre': 'Hành động', 'year': '2019'},
+        ],
+      );
 
   @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Yêu thích', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.favorite_border, size: 80, color: Colors.grey.shade300),
-                    const SizedBox(height: 16),
-                    const Text('Chưa có phim yêu thích', style: TextStyle(color: Colors.grey)),
-                    const SizedBox(height: 8),
-                    ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                      child: const Text('Khám phá phim hay'),
-                    ),
-                  ],
-                ),
-              ),
+  Widget buildContent(BuildContext context, List<Map<String, String>> movies) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Phim yêu thích',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: ListView.separated(
+              itemCount: movies.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final movie = movies[index];
+
+                return Card(
+                  child: ListTile(
+                    leading: const CircleAvatar(child: Icon(Icons.movie)),
+                    title: Text(movie['title']!),
+                    subtitle: Text('${movie['genre']} • ${movie['year']}'),
+                    trailing: const Icon(Icons.favorite, color: Colors.red),
+                  ),
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

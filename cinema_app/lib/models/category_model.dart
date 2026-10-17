@@ -1,20 +1,27 @@
-class Category {
-  int id;
-  String name;
-  String description;
-  bool isActive;
-  DateTime createdAt;
-  DateTime updatedAt;
+import 'generic_entity.dart';
 
-  // Constructor
+class Category extends GenericEntity<int> {
+  final bool isActive;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
   Category({
-    required this.id,
-    required this.name,
-    required this.description,
+    required int id,
+    required String name,
+    required String description,
     required this.isActive,
     required this.createdAt,
     required this.updatedAt,
-  });
+  }) : super(
+          id: id,
+          name: name,
+          description: description,
+        );
+
+  // Giữ kiểu String cho description của Category.
+  // Trong model Category, description là thông tin bắt buộc.
+  @override
+  String get description => super.description!;
 
   // Hiển thị thông tin Category
   void displayInfo() {
@@ -26,7 +33,7 @@ class Category {
     print('Updated At: $updatedAt');
   }
 
-  // Chuyển Object -> Map
+  // Chuyển Object thành Map
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -38,15 +45,17 @@ class Category {
     };
   }
 
-  // Chuyển Map -> Object
+  // Chuyển Map thành Object
   factory Category.fromJson(Map<String, dynamic> json) {
     return Category(
-      id: json['id'],
-      name: json['name'],
-      description: json['description'],
-      isActive: json['isActive'],
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      id: (json['id'] as num).toInt(),
+      name: json['name'] as String,
+      description: json['description'] as String,
+      isActive: json['isActive'] as bool,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
   }
+
+  // Sử dụng phương thức describe() được kế thừa
 }
