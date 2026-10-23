@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 
-import '../screens/category_page.dart';
-import '../screens/favorite_page.dart';
-import '../screens/home.dart';
-import '../screens/profile_page.dart';
-import '../screens/search_page.dart';
+import '../pages/category_page.dart';
+import '../pages/favorite_page.dart';
+import '../pages/home_page.dart';
+import '../pages/profile_page.dart';
+import '../pages/search_page.dart';
 
+/// Khung chính chứa BottomNavigationBar với 5 tab.
+///
+/// Lưu ý quan trọng: có 5 item nên BẮT BUỘC khai báo
+/// `type: BottomNavigationBarType.fixed`. Nếu không, mặc định sẽ là
+/// `shifting` (khi >= 4 item) -> nền lấy theo tab đang chọn,
+/// chữ khó đọc.
 class NavigationShell extends StatefulWidget {
   const NavigationShell({super.key});
 
@@ -14,32 +20,56 @@ class NavigationShell extends StatefulWidget {
 }
 
 class _NavigationShellState extends State<NavigationShell> {
-  int _currentIndex = 0;
+  int _currentIndexSelected = 0;
 
-  final List<Widget> _pages = const [
-    HomePage(),
-    SearchPage(),
-    CategoryPage(),
-    FavoritePage(),
-    ProfilePage(),
+  void _onItemTapped(int index) {
+    setState(() {
+      _currentIndexSelected = index;
+    });
+  }
+
+  final List<Widget> _tabs = [
+    const HomePage(),
+    const SearchPage(),
+    const CategoryPage(),
+    const FavoritePage(),
+    const ProfilePage(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_currentIndex],
+      body: _tabs[_currentIndexSelected],
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.red,
-        unselectedItemColor: Colors.grey,
+        currentIndex: _currentIndexSelected,
+        onTap: _onItemTapped,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Trang chủ'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Tìm kiếm'),
-          BottomNavigationBarItem(icon: Icon(Icons.grid_view), label: 'Thể loại'),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: 'Yêu thích'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Tài khoản'),
+          BottomNavigationBarItem(
+            label: 'Trang chủ',
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
+          ),
+          BottomNavigationBarItem(
+            label: 'Tìm kiếm',
+            icon: Icon(Icons.search_outlined),
+            activeIcon: Icon(Icons.search),
+          ),
+          BottomNavigationBarItem(
+            label: 'Thể loại',
+            icon: Icon(Icons.category_outlined),
+            activeIcon: Icon(Icons.category),
+          ),
+          BottomNavigationBarItem(
+            label: 'Yêu thích',
+            icon: Icon(Icons.favorite_outline),
+            activeIcon: Icon(Icons.favorite),
+          ),
+          BottomNavigationBarItem(
+            label: 'Tài khoản',
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+          ),
         ],
       ),
     );
