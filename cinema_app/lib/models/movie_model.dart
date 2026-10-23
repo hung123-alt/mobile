@@ -1,4 +1,6 @@
 import 'base_entity.dart';
+import 'country_model.dart';
+import 'genre_model.dart';
 
 class Movie extends BaseEntity<int> {
   final String slug;

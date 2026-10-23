@@ -32,10 +32,10 @@ class PageResult<T> {
   bool getHasPrevious() => page > 1;
 
   /// Trang kế tiếp
-  int getNextPage() => getHasNext ? page + 1 : page;
+  int getNextPage() => getHasNext() ? page + 1 : page;
 
   /// Trang trước
-  int getPreviousPage() => getHasPrevious ? page - 1 : page;
+  int getPreviousPage() => getHasPrevious() ? page - 1 : page;
 
   /// Danh sách rỗng
   factory PageResult.empty() {

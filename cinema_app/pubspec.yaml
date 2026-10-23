@@ -35,6 +35,25 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
+  # Gọi REST API tới backend NestJS
+  http: ^1.2.2
+
+  # Lưu token đăng nhập cục bộ
+  shared_preferences: ^2.3.3
+
+  # ===== Firebase =====
+  # firebase_core: khởi tạo Firebase, bắt buộc phải có
+  firebase_core: ^3.8.0
+
+  # cloud_firestore: đọc/ghi dữ liệu NoSQL
+  cloud_firestore: ^5.4.4
+
+  # firebase_auth: đăng nhập (thay cho bảng users + JWT của NestJS)
+  firebase_auth: ^5.3.1
+
+  # Icon phim (poster, play button...)
+  # cached_network_image: ^3.4.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

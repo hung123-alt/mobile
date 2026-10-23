@@ -29,10 +29,10 @@ class ApiResponse<T, E> {
     Map<String, dynamic> json,
     T Function(dynamic raw) parser,
   ) {
-    return ApiResponse<T, String>(
+    return ApiResponse<T, E>(
       success: json['success'] as bool? ?? false,
       data: json['data'] != null ? parser(json['data']) : null,
-      error: json['error']?.toString(),
+      error: json['error'] as E?,
       message: json['message']?.toString(),
     );
   }
@@ -40,7 +40,7 @@ class ApiResponse<T, E> {
   /// Trả về data nếu thành công, ngược lại trả về giá trị mặc định
   T? getDataOr(T fallback) => success ? (data ?? fallback) : fallback;
 
-  bool getHasError => error != null;
+  bool get getHasError => error != null;
 
   @override
   String toString() {

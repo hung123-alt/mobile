@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-import '../constants/app_constants.dart';
+import '../core/constants/app_constants.dart';
 
 /// Lỗi API - dùng try/catch để bắt trong service.
 class ApiException implements Exception {
@@ -14,13 +14,7 @@ class ApiException implements Exception {
   String toString() => 'ApiException($statusCode): $message';
 }
 
-/// Service gọi REST API tới backend NestJS.
-///
-/// Đây là nơi áp dụng Generic với hàm (tuần 7):
-///   Future<T> get<T>(String path, T Function(dynamic) parser)
-///
-/// Mỗi service con (movie, auth, comment...) sẽ gọi các hàm generic
-/// này rồi truyền vào hàm parse tương ứng.
+
 class ApiService {
   ApiService({http.Client? client}) : _client = client ?? http.Client();
 
