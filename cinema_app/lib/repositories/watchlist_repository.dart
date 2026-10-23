@@ -4,11 +4,7 @@ import '../models/watchlist_item_model.dart';
 import '../services/api_service.dart';
 import '../services/watchlist_service.dart';
 
-/// Repository "Xem sau" - gom WatchlistService + xử lý lỗi cho Provider.
-///
-/// Theo đúng quy ước đã dùng ở `movie_repository.dart`: Repository bắt
-/// [ApiException], ghi log bằng debugPrint, trả về giá trị an toàn
-/// (danh sách rỗng / false) để UI không bị crash khi mất mạng.
+
 class WatchlistRepository {
   WatchlistRepository(this._watchlistService);
 

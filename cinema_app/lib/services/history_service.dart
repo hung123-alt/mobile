@@ -1,14 +1,6 @@
 import 'api_service.dart';
 
-/// Model 1 dòng lịch sử xem - dùng cho mục "Xem tiếp" ở trang chủ.
-///
-/// Khớp với server/src/modules/watch-history/watch-history.entity.ts:
-///   PrimaryGeneratedColumn id + Unique(userId, episodeId) + progressSeconds
-///   + watchedAt + quan hệ ManyToOne tới Movie và Episode.
-///
-/// Đặt trong cùng file với HistoryService vì model này CHỈ được dùng bởi
-/// service này (không có module nào khác cần tới), khác với Movie/Genre
-/// được tái sử dụng ở nhiều nơi nên phải tách file riêng trong `models/`.
+
 class WatchHistoryItem {
   final int id;
   final int userId;

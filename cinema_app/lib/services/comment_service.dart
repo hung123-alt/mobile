@@ -1,10 +1,7 @@
 import 'api_service.dart';
 import '../models/comment_model.dart';
 
-/// Service gọi API cho bình luận.
-///
-/// Endpoint lấy từ server/src/modules/comments/comments.controller.ts.
-/// Chỉ "create", "remove" cần đăng nhập; "findByMovie" là route public.
+
 class CommentService {
   CommentService(this._api);
 

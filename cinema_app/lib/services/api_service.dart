@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 
 import '../core/constants/app_constants.dart';
 
-/// Lỗi API - dùng try/catch để bắt trong service.
 class ApiException implements Exception {
   final int statusCode;
   final String message;

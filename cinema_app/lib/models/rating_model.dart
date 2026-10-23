@@ -1,11 +1,4 @@
-/// Model đánh giá (rating) phim.
-///
-/// Bảng `ratings` có KHÓA CHÍNH KÉP (user_id, movie_id) — không có cột `id`.
-///
-/// Vì vậy KHÔNG kế thừa IdEntity<int> (vì không có id đơn).
-/// Đây là trường hợp chứng minh Generic không phải lúc nào cũng áp dụng.
-///
-/// Khớp với server/src/modules/ratings/rating.entity.ts
+
 class Rating {
   final int userId;
   final int movieId;

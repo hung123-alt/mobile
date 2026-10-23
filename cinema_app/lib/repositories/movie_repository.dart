@@ -6,17 +6,7 @@ import '../models/page_result.dart';
 import '../services/api_service.dart';
 import '../services/movie_service.dart';
 
-/// Repository phim - tương đương lớp Service trong NestJS
-/// (`server/src/modules/movies/movies.service.ts`).
-///
-/// Khác với MovieService (chỉ gọi HTTP + parse JSON), Repository là nơi:
-///   - Bắt lỗi ApiException từ tầng Service, ghi log bằng debugPrint
-///     (không dùng print trong code thật).
-///   - Quyết định phim không tìm thấy (404) nên trả null/rỗng cho UI thay vì
-///     để exception bay lên màn hình, để Provider/Page dễ hiển thị trạng
-///     thái "không có dữ liệu" mà không phải viết try/catch lặp lại.
-///   - Là nơi DUY NHẤT các Provider được phép gọi tới khi cần dữ liệu phim —
-///     Provider không gọi trực tiếp MovieService hay ApiService.
+
 class MovieRepository {
   MovieRepository(this._movieService);
 

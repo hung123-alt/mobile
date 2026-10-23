@@ -4,14 +4,12 @@ import '../models/comment_model.dart';
 import '../services/api_service.dart';
 import '../services/comment_service.dart';
 
-/// Repository bình luận - gom CommentService + xử lý lỗi cho Provider/Page.
 class CommentRepository {
   CommentRepository(this._commentService);
 
   final CommentService _commentService;
 
-  /// Viết bình luận mới. Trả null nếu lỗi (ví dụ chưa đăng nhập, mất mạng)
-  /// để UI hiển thị thông báo lỗi thay vì ném exception lên widget tree.
+  
   Future<Comment?> create({
     required int movieId,
     required String content,

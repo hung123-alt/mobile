@@ -3,23 +3,9 @@ import '../models/movie_detail_result.dart';
 import '../models/movie_model.dart';
 import '../models/page_result.dart';
 
-/// Service gọi API cho phim.
-///
-/// Endpoint lấy từ server/src/modules/movies/movies.controller.ts:
-///   GET /movies            -> danh sách phim đang hiển thị
-///   GET /movies/slug/:slug -> chi tiết phim (tăng lượt xem)
-///   GET /movies/detail/:slug -> trang xem phim (phim + tập + liên quan)
-///   GET /movies/random     -> random 1 phim
-///   GET /movies/random/advanced -> random nhiều phim có lọc
-///   GET /movies/filter     -> lọc + phân trang
-///   GET /movies/:id        -> chi tiết phim theo id
-///
-/// Theo kiến trúc đã thống nhất: Service CHỈ gọi [ApiService] và parse JSON
-/// bằng các factory `fromJson` của model. KHÔNG tự try/catch ở đây —
-/// để [ApiException] bay lên cho `repositories/movie_repository.dart` xử lý,
-/// giống cách Controller trong NestJS không tự bắt lỗi mà để tầng trên lo.
+
 class MovieService {
-  /// Nhận [ApiService] qua constructor (dependency injection) — giống
+
   /// NestJS `constructor(private readonly xxxService: XxxService) {}`.
   MovieService(this._api);
 
@@ -65,9 +51,7 @@ class MovieService {
     );
   }
 
-  /// Random nhanh — lấy đúng 1 phim ngẫu nhiên.
-  ///
-  ///   GET /movies/random
+  
   Future<Movie> getRandomOne() {
     return _api.get<Movie>(
       '/movies/random',
