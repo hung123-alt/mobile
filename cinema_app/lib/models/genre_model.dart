@@ -1,49 +1,39 @@
-import 'generic_entity.dart';
+import 'base_entity.dart';
 
-class Genre extends GenericEntity<int> {
+/// Model thể loại phim - kế thừa BaseEntity<int>
+///
+/// Khớp với server/src/modules/genres/genre.entity.ts
+class Genre extends BaseEntity<int> {
   final String slug;
   final bool isVisible;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
-  const Genre({
+  Genre({
     required int id,
     required String name,
+    required String description,
     required this.slug,
     required this.isVisible,
     required this.createdAt,
     required this.updatedAt,
-  }) : super(
-          id: id,
-          name: name,
-        );
+  }) : super(id: id, name: name, description: description);
 
-  // Chuyển dữ liệu Map thành đối tượng Genre
-  factory Genre.fromMap(Map<String, dynamic> map) {
+  /// Parse từ JSON. Server trả `name` cho genre (không phải `title`)
+  factory Genre.fromJson(Map<String, dynamic> json) {
     return Genre(
-      id: (map['id'] as num).toInt(),
-      name: map['name'] as String,
-      slug: map['slug'] as String,
-      isVisible: map['isVisible'] as bool? ?? true,
-      createdAt: DateTime.parse(map['createdAt'] as String),
-      updatedAt: DateTime.parse(map['updatedAt'] as String),
+      id: json['id'] as int? ?? 0,
+      name: json['name'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      slug: json['slug'] as String? ?? '',
+      isVisible: json['isVisible'] as bool? ?? true,
+      createdAt: _parseDate(json['createdAt']),
+      updatedAt: _parseDate(json['updatedAt']),
     );
   }
 
-  // Chuyển đối tượng Genre thành Map
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'name': name,
-      'slug': slug,
-      'isVisible': isVisible,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
-    };
-  }
-
-  @override
-  String describe() {
-    return '$name ($slug)';
+  static DateTime? _parseDate(dynamic raw) {
+    if (raw == null) return null;
+    return DateTime.tryParse(raw.toString());
   }
 }

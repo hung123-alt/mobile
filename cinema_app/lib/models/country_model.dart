@@ -1,37 +1,28 @@
-import 'generic_entity.dart';
+import 'base_entity.dart';
 
-class Country extends GenericEntity<int> {
+/// Model quốc gia - kế thừa BaseEntity<int>
+///
+/// Khớp với server/src/modules/countries/countries.entity.ts
+class Country extends BaseEntity<int> {
   final String slug;
+  final bool isVisible;
 
-  const Country({
+  Country({
     required int id,
     required String name,
+    required String description,
     required this.slug,
-  }) : super(
-          id: id,
-          name: name,
-        );
+    required this.isVisible,
+  }) : super(id: id, name: name, description: description);
 
-  // Chuyển dữ liệu Map thành đối tượng Country
-  factory Country.fromMap(Map<String, dynamic> map) {
+  /// Parse từ JSON
+  factory Country.fromJson(Map<String, dynamic> json) {
     return Country(
-      id: (map['id'] as num).toInt(),
-      name: map['name'] as String,
-      slug: map['slug'] as String,
+      id: json['id'] as int? ?? 0,
+      name: json['name'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      slug: json['slug'] as String? ?? '',
+      isVisible: json['isVisible'] as bool? ?? true,
     );
-  }
-
-  // Chuyển đối tượng Country thành Map
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'name': name,
-      'slug': slug,
-    };
-  }
-
-  @override
-  String describe() {
-    return '$name ($slug)';
   }
 }
