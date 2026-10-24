@@ -101,10 +101,14 @@ class AuthService {
       if (user == null) {
         throw FirestoreException('not-authenticated', 'Chưa đăng nhập');
       }
+      final email = user.email;
+      if (email == null) {
+        throw FirestoreException('no-email', 'Tài khoản không có email');
+      }
       // Bắt buộc xác thực lại bằng mật khẩu cũ — không thể chỉ dựa vào
       // token đang có, tránh kẻ trộm token đổi mật khẩu người dùng.
       final credential = EmailAuthProvider.credential(
-        email: user.email,
+        email: email,
         password: currentPassword,
       );
       await user.reauthenticateWithCredential(credential);

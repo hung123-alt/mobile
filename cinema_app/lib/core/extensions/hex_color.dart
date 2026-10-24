@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 /// Extension để đổi chuỗi hex thành màu Color.
 ///
 /// Cùng kiểu với ví dụ `extension Hexcolor on Color` trong tài liệu

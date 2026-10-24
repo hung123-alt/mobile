@@ -105,20 +105,23 @@ class Movie extends BaseEntity<int> {
       name: json['title'] as String? ?? json['name'] as String? ?? '',
       description: json['description'] as String? ?? '',
       slug: json['slug'] as String? ?? '',
-      posterUrl: json['posterUrl'] as String?,
-      bannerUrl: json['bannerUrl'] as String?,
+      posterUrl: (json['posterUrl'] ?? json['poster_url']) as String?,
+      bannerUrl: (json['bannerUrl'] ?? json['banner_url']) as String?,
       type: json['type'] as String? ?? 'phim_le',
       status: json['status'] as String? ?? 'ongoing',
-      releaseYear: json['releaseYear'] as int?,
-      totalEpisodes: json['totalEpisodes'] as int? ?? 0,
-      viewCount: json['viewCount'] as int? ?? 0,
-      avgRating: (json['avgRating'] as num?)?.toDouble() ?? 0.0,
-      ratingCount: json['ratingCount'] as int? ?? 0,
-      isFeatured: json['isFeatured'] as bool? ?? false,
-      isVisible: json['isVisible'] as bool? ?? true,
-      scheduleDate: _parseDate(json['scheduleDate']),
-      createdAt: _parseDate(json['createdAt']),
-      updatedAt: _parseDate(json['updatedAt']),
+      releaseYear: (json['releaseYear'] ?? json['release_year']) as int?,
+      totalEpisodes: (json['totalEpisodes'] ?? json['total_episodes']) as int? ?? 0,
+      viewCount: (json['viewCount'] ?? json['view_count']) as int? ?? 0,
+      avgRating: (json['avgRating'] as num?)?.toDouble() ??
+          (json['avg_rating'] as num?)?.toDouble() ??
+          0.0,
+      ratingCount: (json['ratingCount'] ?? json['rating_count']) as int? ?? 0,
+      isFeatured: json['isFeatured'] as bool? ?? (json['is_featured'] == 1),
+      isVisible: json['isVisible'] as bool? ??
+          (json['is_visible'] != null ? json['is_visible'] == 1 : true),
+      scheduleDate: _parseDate(json['scheduleDate'] ?? json['schedule_date']),
+      createdAt: _parseDate(json['createdAt'] ?? json['created_at']),
+      updatedAt: _parseDate(json['updatedAt'] ?? json['updated_at']),
       genres: (json['genres'] as List?)
               ?.map((e) => Genre.fromJson(e as Map<String, dynamic>))
               .toList() ??
