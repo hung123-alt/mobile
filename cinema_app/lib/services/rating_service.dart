@@ -1,52 +1,127 @@
-import 'api_service.dart';
-import '../models/rating_model.dart';
 
-/// Service gọi API cho đánh giá (rating) phim.
-///
-/// Endpoint lấy từ server/src/modules/ratings/ratings.controller.ts.
-/// Tất cả route cần đăng nhập (@UseGuards(JwtAuthGuard) ở cấp Controller).
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+import '../core/firebase/collection_names.dart';
+import '../models/movie_model.dart';
+
+class RatingStats {
+  final double average;
+  final int count;
+
+  const RatingStats({
+    required this.average,
+    required this.count,
+  });
+}
+
 class RatingService {
-  RatingService(this._api);
+  RatingService({
+    FirebaseFirestore? firestore,
+    FirebaseAuth? firebaseAuth,
+  })  : _firestore = firestore ?? FirebaseFirestore.instance,
+        _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance;
 
-  final ApiService _api;
+  final FirebaseFirestore _firestore;
+  final FirebaseAuth _firebaseAuth;
 
-  /// Đánh giá phim (tạo mới hoặc cập nhật nếu đã đánh giá trước đó —
-  /// server dùng khóa chính kép userId+movieId nên "rate" đóng vai trò
-  /// upsert, không cần phân biệt create/update ở phía client).
-  ///
-  ///   POST /ratings  body: { movieId, score, content? }
-  Future<Rating> rate({
-    required int movieId,
+  // movies/{slug}/ratings/{uid}
+  CollectionReference<Map<String, dynamic>> _ratings(Movie movie) {
+    if (movie.slug.trim().isEmpty ||
+        movie.slug.contains('/')) {
+      throw ArgumentError('Phim không có slug hợp lệ.');
+    }
+
+    return _firestore
+        .collection(CollectionNames.movies)
+        .doc(movie.slug)
+        .collection(CollectionNames.ratings);
+  }
+
+  // Thêm hoặc cập nhật đánh giá
+  Future<void> rate({
+    required Movie movie,
     required int score,
     String? content,
-  }) {
-    return _api.post<Rating>(
-      '/ratings',
-      {
-        'movieId': movieId,
-        'score': score,
-        if (content != null && content.isNotEmpty) 'content': content,
-      },
-      (raw) => Rating.fromJson(raw as Map<String, dynamic>),
+  }) async {
+    final user = _firebaseAuth.currentUser;
+
+    if (user == null) {
+      throw StateError(
+        'Bạn cần đăng nhập bằng Firebase Authentication để đánh giá.',
+      );
+    }
+
+    if (score < 1 || score > 10) {
+      throw ArgumentError('Điểm đánh giá phải từ 1 đến 10.');
+    }
+
+    final cleanContent = content?.trim() ?? '';
+
+    if (cleanContent.length > 1000) {
+      throw ArgumentError('Nhận xét tối đa 1000 ký tự.');
+    }
+
+    final doc = _ratings(movie).doc(user.uid);
+
+    final oldRating = await doc.get();
+
+    final data = <String, dynamic>{
+      'uid': user.uid,
+      'movieId': movie.id,
+      'score': score,
+      'content': cleanContent,
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+
+    if (!oldRating.exists) {
+      data['createdAt'] = FieldValue.serverTimestamp();
+    }
+
+    await doc.set(
+      data,
+      SetOptions(merge: true),
     );
   }
 
-  /// Lấy điểm mình đã đánh giá cho 1 phim. Trả null nếu chưa đánh giá
-  /// (server trả 404 -> [ApiService] ném [ApiException], bắt ở Repository).
-  ///
-  ///   GET /ratings/movie/:movieId
-  Future<Rating?> getUserRating(int movieId) {
-    return _api.get<Rating?>(
-      '/ratings/movie/$movieId',
-      (raw) =>
-          raw == null ? null : Rating.fromJson(raw as Map<String, dynamic>),
-    );
+  // Lấy điểm người dùng đã đánh giá
+  Future<int?> getMyScore(Movie movie) async {
+    final user = _firebaseAuth.currentUser;
+
+    if (user == null) return null;
+
+    final doc = await _ratings(movie)
+        .doc(user.uid)
+        .get();
+
+    final score = doc.data()?['score'];
+
+    if (score is num && score >= 1 && score <= 10) {
+      return score.toInt();
+    }
+
+    return null;
   }
 
-  /// Xóa đánh giá của mình cho 1 phim.
-  ///
-  ///   DELETE /ratings/movie/:movieId
-  Future<void> remove(int movieId) {
-    return _api.delete('/ratings/movie/$movieId');
+  // Theo dõi điểm trung bình theo thời gian thực
+  Stream<RatingStats> watchStats(Movie movie) {
+    return _ratings(movie).snapshots().map((snapshot) {
+      int count = 0;
+      double total = 0;
+
+      for (final doc in snapshot.docs) {
+        final score = doc.data()['score'];
+
+        if (score is num && score >= 1 && score <= 10) {
+          count++;
+          total += score.toDouble();
+        }
+      }
+
+      return RatingStats(
+        average: count == 0 ? 0 : total / count,
+        count: count,
+      );
+    });
   }
 }
