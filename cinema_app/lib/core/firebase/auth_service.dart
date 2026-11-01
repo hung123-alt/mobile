@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
+import '../constants/app_constants.dart';
 import 'firebase_service.dart';
 
 
@@ -82,21 +84,26 @@ class AuthService {
 
   /// Gửi email đặt lại mật khẩu (Phương án 1: deep link vào app).
   ///
-  /// Firebase sẽ gửi email chứa link. Nhờ [ActionCodeSettings] với
-  /// `handleCodeInApp: true` + `url: cinemahay24h://reset-password`,
-  /// bấm link trên điện thoại sẽ mở thẳng app thay vì mở trình duyệt.
-  /// App bắt link bằng package `app_links`, lấy `oobCode` rồi gọi
-  /// [confirmPasswordReset] — không cần server riêng, không cần `.env`.
+  /// Firebase bắt buộc `url` trong [ActionCodeSettings] là `https` và nằm
+  /// trong Authorized domains (dùng sẵn *.firebaseapp.com) — truyền
+  /// custom-scheme `cinemahay24h://` sẽ bị lỗi "Domain not whitelisted".
+  /// Trên web (`kIsWeb`) gửi không kèm settings: bấm link sẽ reset trên
+  /// trang mặc định của Firebase. Trên mobile, app bắt link bằng `app_links`,
+  /// tách `oobCode` rồi gọi [confirmPasswordReset].
   Future<void> resetPassword(String email) async {
     try {
+      if (kIsWeb) {
+        await _auth.sendPasswordResetEmail(email: email.trim());
+        return;
+      }
       await _auth.sendPasswordResetEmail(
         email: email.trim(),
         actionCodeSettings: ActionCodeSettings(
-          url: 'cinemahay24h://reset-password',
+          url: AppConstants.resetContinueUrl,
           handleCodeInApp: true,
-          androidPackageName: 'com.example.cinema_app',
+          androidPackageName: AppConstants.androidPackageName,
           androidInstallApp: false,
-          iOSBundleId: 'com.example.cinemaApp',
+          iOSBundleId: AppConstants.iosBundleId,
         ),
       );
     } on FirebaseAuthException catch (e) {

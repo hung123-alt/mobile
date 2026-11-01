@@ -28,7 +28,7 @@ class AppConstants {
   static const String keyUser = 'user_json';
 
   // ===== Quên mật khẩu - Deep Link (Phương án 1) =====
-  /// Custom scheme để email reset mở thẳng vào app, không cần mua domain.
+  /// Custom scheme để app bắt link reset sau khi Firebase redirect.
   /// Phải khớp với <intent-filter> trong AndroidManifest và CFBundleURLTypes
   /// trong Info.plist. Mobile KHÔNG dùng cookie nên không cần lo CSRF như web.
   static const String resetScheme = 'cinemahay24h';
@@ -37,6 +37,9 @@ class AppConstants {
   static const String iosBundleId = 'com.example.cinemaApp';
 
   /// Continue URL kèm trong ActionCodeSettings khi gửi email reset.
-  /// Firebase sẽ nhúng vào link trong email (tham số continueUrl).
-  static String get resetContinueUrl => '$resetScheme://$resetHost';
+  /// PHẢI là `https` và nằm trong Authorized domains của Firebase
+  /// (domain *.firebaseapp.com có sẵn) — custom-scheme sẽ bị từ chối
+  /// với lỗi "Domain not whitelisted by project".
+  static const String resetContinueUrl =
+      'https://cinema-app-b760e.firebaseapp.com/reset-password';
 }

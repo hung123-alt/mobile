@@ -429,18 +429,24 @@ class AuthProvider extends ChangeNotifier {
 
       // 2. Gửi email đặt lại mật khẩu qua Firebase Auth (Phương án 1).
       // Không tự tạo user với mật khẩu đoán trước, không lưu plaintext.
-      // Firebase tự kiểm tra user có trên Auth không; app bắt link
-      // cinemahay24h://reset-password?oobCode=... bằng DeepLinkService.
-      await _auth.sendPasswordResetEmail(
-        email: cleanEmail,
-        actionCodeSettings: fb_auth.ActionCodeSettings(
-          url: AppConstants.resetContinueUrl,
-          handleCodeInApp: true,
-          androidPackageName: AppConstants.androidPackageName,
-          androidInstallApp: false,
-          iOSBundleId: AppConstants.iosBundleId,
-        ),
-      );
+      // Trên web KHÔNG kèm ActionCodeSettings (Firebase bắt url https
+      // whitelist; web bấm link reset trên trang mặc định của Firebase).
+      // Trên mobile kèm settings với url https đã whitelist, app bắt link
+      // bằng DeepLinkService để tách oobCode.
+      if (kIsWeb) {
+        await _auth.sendPasswordResetEmail(email: cleanEmail);
+      } else {
+        await _auth.sendPasswordResetEmail(
+          email: cleanEmail,
+          actionCodeSettings: fb_auth.ActionCodeSettings(
+            url: AppConstants.resetContinueUrl,
+            handleCodeInApp: true,
+            androidPackageName: AppConstants.androidPackageName,
+            androidInstallApp: false,
+            iOSBundleId: AppConstants.iosBundleId,
+          ),
+        );
+      }
 
       _isLoading = false;
       notifyListeners();

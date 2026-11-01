@@ -32,6 +32,14 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="cinemahay24h" android:host="reset-password"/>
             </intent-filter>
+            <!-- Bắt link https (continueUrl đã whitelist) để mở thẳng app -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="cinema-app-b760e.firebaseapp.com" android:pathPrefix="/reset-password"/>
+                <data android:scheme="https" android:host="cinema-app-b760e.web.app" android:pathPrefix="/reset-password"/>
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
