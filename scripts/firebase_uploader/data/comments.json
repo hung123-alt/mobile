@@ -1,0 +1,183 @@
+{
+"select * from comments": [
+	{
+		"id" : 1,
+		"user_id" : 2,
+		"movie_id" : 4,
+		"parent_id" : null,
+		"content" : "Phim hay quá!",
+		"is_hidden" : 0,
+		"created_at" : "2026-06-19 10:50:11",
+		"updated_at" : "2026-06-19 10:50:11"
+	},
+	{
+		"id" : 2,
+		"user_id" : 2,
+		"movie_id" : 4,
+		"parent_id" : null,
+		"content" : "Phim hay  tuyệt vời",
+		"is_hidden" : 0,
+		"created_at" : "2026-06-20 02:37:02",
+		"updated_at" : "2026-06-20 02:37:02"
+	},
+	{
+		"id" : 3,
+		"user_id" : 1,
+		"movie_id" : 1,
+		"parent_id" : null,
+		"content" : "",
+		"is_hidden" : 0,
+		"created_at" : "2026-06-29 19:19:41",
+		"updated_at" : "2026-06-29 19:19:41"
+	},
+	{
+		"id" : 4,
+		"user_id" : 1,
+		"movie_id" : 1,
+		"parent_id" : null,
+		"content" : "Phim này hay quá  xem tiếp nha",
+		"is_hidden" : 0,
+		"created_at" : "2026-06-29 19:21:00",
+		"updated_at" : "2026-06-29 19:21:00"
+	},
+	{
+		"id" : 5,
+		"user_id" : 1,
+		"movie_id" : 84,
+		"parent_id" : null,
+		"content" : "hello",
+		"is_hidden" : 0,
+		"created_at" : "2026-07-12 21:58:40",
+		"updated_at" : "2026-07-12 21:58:40"
+	},
+	{
+		"id" : 6,
+		"user_id" : 1,
+		"movie_id" : 15,
+		"parent_id" : null,
+		"content" : "Check",
+		"is_hidden" : 0,
+		"created_at" : "2026-07-12 22:22:13",
+		"updated_at" : "2026-07-12 22:22:13"
+	},
+	{
+		"id" : 7,
+		"user_id" : 1,
+		"movie_id" : 15,
+		"parent_id" : 6,
+		"content" : "test",
+		"is_hidden" : 0,
+		"created_at" : "2026-07-14 06:18:20",
+		"updated_at" : "2026-07-14 06:18:20"
+	},
+	{
+		"id" : 8,
+		"user_id" : 1,
+		"movie_id" : 41,
+		"parent_id" : null,
+		"content" : "hi",
+		"is_hidden" : 0,
+		"created_at" : "2026-07-16 15:07:48",
+		"updated_at" : "2026-07-16 15:07:48"
+	},
+	{
+		"id" : 9,
+		"user_id" : 8,
+		"movie_id" : 2,
+		"parent_id" : null,
+		"content" : "hay quá",
+		"is_hidden" : 0,
+		"created_at" : "2026-07-21 06:33:01",
+		"updated_at" : "2026-07-21 06:33:01"
+	},
+	{
+		"id" : 10,
+		"user_id" : 1,
+		"movie_id" : 108,
+		"parent_id" : null,
+		"content" : "a",
+		"is_hidden" : 0,
+		"created_at" : "2026-07-25 18:49:20",
+		"updated_at" : "2026-07-25 18:49:20"
+	},
+	{
+		"id" : 11,
+		"user_id" : 1,
+		"movie_id" : 108,
+		"parent_id" : null,
+		"content" : "hay",
+		"is_hidden" : 0,
+		"created_at" : "2026-07-25 18:51:15",
+		"updated_at" : "2026-07-25 18:51:15"
+	},
+	{
+		"id" : 12,
+		"user_id" : 7,
+		"movie_id" : 2,
+		"parent_id" : null,
+		"content" : "hay thật",
+		"is_hidden" : 0,
+		"created_at" : "2026-07-25 19:00:18",
+		"updated_at" : "2026-07-25 19:00:18"
+	},
+	{
+		"id" : 14,
+		"user_id" : 1,
+		"movie_id" : 2,
+		"parent_id" : null,
+		"content" : "hay quas",
+		"is_hidden" : 0,
+		"created_at" : "2026-07-27 03:03:37",
+		"updated_at" : "2026-07-27 03:03:37"
+	},
+	{
+		"id" : 15,
+		"user_id" : 1,
+		"movie_id" : 235,
+		"parent_id" : null,
+		"content" : "ọiaif",
+		"is_hidden" : 0,
+		"created_at" : "2026-07-27 03:04:51",
+		"updated_at" : "2026-07-27 03:04:51"
+	},
+	{
+		"id" : 16,
+		"user_id" : 7,
+		"movie_id" : 235,
+		"parent_id" : null,
+		"content" : "kZNsj",
+		"is_hidden" : 0,
+		"created_at" : "2026-07-27 03:09:48",
+		"updated_at" : "2026-07-27 03:12:25"
+	},
+	{
+		"id" : 17,
+		"user_id" : 11,
+		"movie_id" : 41,
+		"parent_id" : null,
+		"content" : "You do need to work on the number 9 question",
+		"is_hidden" : 0,
+		"created_at" : "2026-08-17 05:14:19",
+		"updated_at" : "2026-08-17 05:14:19"
+	},
+	{
+		"id" : 18,
+		"user_id" : 11,
+		"movie_id" : 41,
+		"parent_id" : 17,
+		"content" : "by nglthu",
+		"is_hidden" : 0,
+		"created_at" : "2026-08-17 05:14:36",
+		"updated_at" : "2026-08-17 05:14:36"
+	},
+	{
+		"id" : 19,
+		"user_id" : 11,
+		"movie_id" : 41,
+		"parent_id" : 17,
+		"content" : "by nglthu",
+		"is_hidden" : 0,
+		"created_at" : "2026-08-17 05:14:37",
+		"updated_at" : "2026-08-17 05:14:37"
+	}
+]}

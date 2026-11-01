@@ -1,62 +1,160 @@
-class Movies{
-  final int id;
-  final String title;
-  final String? description;
-  final String thumbnail;
-  final int categoryId;
-  final int countryId;
-  final int releaseYear;
-  final String movieType;
-  final String? status;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
+import 'base_entity.dart';
+import 'country_model.dart';
+import 'genre_model.dart';
 
-  const Movies({
-    required this.id,
-    required this.title,
-    required this.description,
-    required this.thumbnail,
-    required this.categoryId,
-    required this.countryId,
-    required this.releaseYear,
-    required this.movieType,
+class Movie extends BaseEntity<int> {
+  final String slug;
+  final String? posterUrl;
+  final String? bannerUrl;
+  final String type;
+  final String status;
+  final int? releaseYear;
+  final int totalEpisodes;
+  final int viewCount;
+  final double avgRating;
+  final int ratingCount;
+  final bool isFeatured;
+  final bool isVisible;
+  final DateTime? scheduleDate;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+  final List<Genre> genres;
+  final List<Country> countries;
+
+  Movie({
+    required int id,
+    required String name,
+    required String description,
+    required this.slug,
+    required this.posterUrl,
+    required this.bannerUrl,
+    required this.type,
     required this.status,
+    required this.releaseYear,
+    required this.totalEpisodes,
+    required this.viewCount,
+    required this.avgRating,
+    required this.ratingCount,
+    required this.isFeatured,
+    required this.isVisible,
+    required this.scheduleDate,
     required this.createdAt,
     required this.updatedAt,
-  });
+    required this.genres,
+    required this.countries,
+  }) : super(id: id, name: name, description: description);
 
-  //Chuyển data từ Map sang Object Movies --> DB
-  factory Movies.fromMap(Map<String, dynamic> map) {
-    return Movies(
-      id: map['id'] as int,
-      title: map['title'] as String,
-      description: map['description'] as String,
-      thumbnail: map['thumbnail'] as String,
-      categoryId: map['categoryId'] as int,
-      countryId: map['countryId'] as int,
-      releaseYear: map['releaseYear'] as int,
-      movieType: map['movieType'] as String,
-      status: map['status'] as String,
-      createdAt: DateTime.parse(map['createdAt'] as String),
-      updatedAt: DateTime.parse(map['updatedAt'] as String),
+  // ===== Getters riêng của Movie =====
+
+  double getRating() => avgRating;
+  int getViewCount() => viewCount;
+  int getTotalEpisodes() => totalEpisodes;
+  bool getIsFeatured() => isFeatured;
+
+  /// URL hình ảnh hiển thị cho bộ phim (ưu tiên bannerUrl theo yêu cầu của người dùng, fallback posterUrl)
+  String? get displayImageUrl {
+    String? raw;
+    if (bannerUrl != null && bannerUrl!.isNotEmpty && bannerUrl != '{}') {
+      raw = bannerUrl;
+    } else if (posterUrl != null && posterUrl!.isNotEmpty && posterUrl != '{}') {
+      raw = posterUrl;
+    }
+    if (raw == null) return null;
+
+    // Trên nền tảng Web (Chrome), server vsmov.com không gắn CORS header khiến trình duyệt chặn tải ảnh.
+    // Dùng wsrv.nl proxy để gắn CORS và tối ưu tải ảnh trên Web.
+    if (kIsWeb && raw.startsWith('http')) {
+      return 'https://wsrv.nl/?url=${Uri.encodeComponent(raw)}';
+    }
+    return raw;
+  }
+
+  /// Tên thể loại đầu tiên, dùng cho badge
+  String getFirstGenreName() {
+    if (genres.isEmpty) return 'Chưa phân loại';
+    return genres.first.getName();
+  }
+
+  /// Nhãn hiển thị kiểu phim
+  String getTypeLabel() {
+    switch (type) {
+      case 'phim_le':
+        return 'Phim Lẻ';
+      case 'phim_bo':
+        return 'Phim Bộ';
+      case 'hoat_hinh':
+        return 'Hoạt Hình';
+      case 'anime':
+        return 'Anime';
+      default:
+        return 'Khác';
+    }
+  }
+
+  /// Nhãn hiển thị trạng thái
+  String getStatusLabel() {
+    switch (status) {
+      case 'ongoing':
+        return 'Đang phát';
+      case 'completed':
+        return 'Hoàn thành';
+      case 'upcoming':
+        return 'Sắp chiếu';
+      default:
+        return status;
+    }
+  }
+
+  /// Định dạng lượt xem: 1234 -> "1.2K"
+  String getViewCountLabel() {
+    if (viewCount >= 1000000) {
+      return '${(viewCount / 1000000).toStringAsFixed(1)}M';
+    }
+    if (viewCount >= 1000) {
+      return '${(viewCount / 1000).toStringAsFixed(1)}K';
+    }
+    return '$viewCount';
+  }
+
+  /// Parse từ JSON của server
+  factory Movie.fromJson(Map<String, dynamic> json) {
+    return Movie(
+      id: json['id'] as int? ?? 0,
+      name: json['title'] as String? ?? json['name'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      slug: json['slug'] as String? ?? '',
+      posterUrl: (json['posterUrl'] ?? json['poster_url']) as String?,
+      bannerUrl: (json['bannerUrl'] ?? json['banner_url']) as String?,
+      type: json['type'] as String? ?? 'phim_le',
+      status: json['status'] as String? ?? 'ongoing',
+      releaseYear: (json['releaseYear'] ?? json['release_year']) as int?,
+      totalEpisodes: (json['totalEpisodes'] ?? json['total_episodes']) as int? ?? 0,
+      viewCount: (json['viewCount'] ?? json['view_count']) as int? ?? 0,
+      avgRating: (json['avgRating'] as num?)?.toDouble() ??
+          (json['avg_rating'] as num?)?.toDouble() ??
+          0.0,
+      ratingCount: (json['ratingCount'] ?? json['rating_count']) as int? ?? 0,
+      isFeatured: json['isFeatured'] as bool? ?? (json['is_featured'] == 1),
+      isVisible: json['isVisible'] as bool? ??
+          (json['is_visible'] != null ? json['is_visible'] == 1 : true),
+      scheduleDate: _parseDate(json['scheduleDate'] ?? json['schedule_date']),
+      createdAt: _parseDate(json['createdAt'] ?? json['created_at']),
+      updatedAt: _parseDate(json['updatedAt'] ?? json['updated_at']),
+      genres: (json['genres'] as List?)
+              ?.map((e) => Genre.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          <Genre>[],
+      countries: (json['countries'] as List?)
+              ?.map((e) => Country.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          <Country>[],
     );
   }
 
-  //Chuyển data từ Object Movies sang Map --> local
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'title': title,
-      'description': description,
-      'thumbnail': thumbnail,
-      'categoryId': categoryId,
-      'countryId': countryId,
-      'releaseYear': releaseYear,
-      'movieType': movieType,
-      'status': status,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
-    };
-  } 
+  static DateTime? _parseDate(dynamic raw) {
+    if (raw == null) return null;
+    return DateTime.tryParse(raw.toString());
+  }
 }

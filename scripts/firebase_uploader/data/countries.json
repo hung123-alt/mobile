@@ -1,0 +1,123 @@
+{
+"select * from countries": [
+	{
+		"id" : 1,
+		"name" : "Việt Nam",
+		"slug" : "viet-nam",
+		"code" : null
+	},
+	{
+		"id" : 2,
+		"name" : "Hàn Quốc",
+		"slug" : "han-quoc",
+		"code" : null
+	},
+	{
+		"id" : 3,
+		"name" : "Trung Quốc",
+		"slug" : "trung-quoc",
+		"code" : null
+	},
+	{
+		"id" : 4,
+		"name" : "Nhật Bản",
+		"slug" : "nhat-ban",
+		"code" : null
+	},
+	{
+		"id" : 5,
+		"name" : "Thái Lan",
+		"slug" : "thai-lan",
+		"code" : null
+	},
+	{
+		"id" : 6,
+		"name" : "Âu Mỹ",
+		"slug" : "au-my",
+		"code" : null
+	},
+	{
+		"id" : 7,
+		"name" : "Đài Loan",
+		"slug" : "dai-loan",
+		"code" : null
+	},
+	{
+		"id" : 8,
+		"name" : "Hồng Kông",
+		"slug" : "hong-kong",
+		"code" : null
+	},
+	{
+		"id" : 10,
+		"name" : "Anh",
+		"slug" : "anh",
+		"code" : null
+	},
+	{
+		"id" : 718,
+		"name" : "Singapore",
+		"slug" : "singapore",
+		"code" : null
+	},
+	{
+		"id" : 730,
+		"name" : "Pháp",
+		"slug" : "phap",
+		"code" : null
+	},
+	{
+		"id" : 749,
+		"name" : "Tây Ban Nha",
+		"slug" : "tay-ban-nha",
+		"code" : null
+	},
+	{
+		"id" : 750,
+		"name" : "Ý",
+		"slug" : "y",
+		"code" : null
+	},
+	{
+		"id" : 751,
+		"name" : "Hà Lan",
+		"slug" : "ha-lan",
+		"code" : null
+	},
+	{
+		"id" : 752,
+		"name" : "Luxembourg",
+		"slug" : "luxembourg",
+		"code" : null
+	},
+	{
+		"id" : 781,
+		"name" : "Úc",
+		"slug" : "uc",
+		"code" : null
+	},
+	{
+		"id" : 806,
+		"name" : "Đức",
+		"slug" : "duc",
+		"code" : null
+	},
+	{
+		"id" : 807,
+		"name" : "Ireland",
+		"slug" : "ireland",
+		"code" : null
+	},
+	{
+		"id" : 831,
+		"name" : "usa",
+		"slug" : "usa",
+		"code" : null
+	},
+	{
+		"id" : 834,
+		"name" : "Indonesia",
+		"slug" : "indonesia",
+		"code" : null
+	}
+]}

@@ -1,0 +1,83 @@
+{
+"select * from ratings": [
+	{
+		"user_id" : 1,
+		"movie_id" : 120,
+		"score" : 9,
+		"content" : null,
+		"created_at" : "2026-07-22 06:19:01",
+		"updated_at" : "2026-07-22 06:19:01"
+	},
+	{
+		"user_id" : 2,
+		"movie_id" : 4,
+		"score" : 9,
+		"content" : "Phim hay!",
+		"created_at" : "2026-06-19 10:04:39",
+		"updated_at" : "2026-06-19 10:04:39"
+	},
+	{
+		"user_id" : 7,
+		"movie_id" : 235,
+		"score" : 7,
+		"content" : null,
+		"created_at" : "2026-07-27 03:09:56",
+		"updated_at" : "2026-07-27 03:09:56"
+	},
+	{
+		"user_id" : 8,
+		"movie_id" : 2,
+		"score" : 9,
+		"content" : "rất hay nhé",
+		"created_at" : "2026-07-21 06:33:13",
+		"updated_at" : "2026-07-21 06:33:13"
+	},
+	{
+		"user_id" : 8,
+		"movie_id" : 28,
+		"score" : 10,
+		"content" : "hay",
+		"created_at" : "2026-07-21 07:40:45",
+		"updated_at" : "2026-07-21 07:40:45"
+	},
+	{
+		"user_id" : 8,
+		"movie_id" : 41,
+		"score" : 8,
+		"content" : "bộ phim tuyệt vời",
+		"created_at" : "2026-07-21 06:33:35",
+		"updated_at" : "2026-07-21 06:33:35"
+	},
+	{
+		"user_id" : 8,
+		"movie_id" : 73,
+		"score" : 10,
+		"content" : null,
+		"created_at" : "2026-07-22 05:58:36",
+		"updated_at" : "2026-07-22 05:58:36"
+	},
+	{
+		"user_id" : 8,
+		"movie_id" : 75,
+		"score" : 9,
+		"content" : null,
+		"created_at" : "2026-07-21 06:40:23",
+		"updated_at" : "2026-07-21 06:40:23"
+	},
+	{
+		"user_id" : 8,
+		"movie_id" : 92,
+		"score" : 8,
+		"content" : null,
+		"created_at" : "2026-07-21 08:30:49",
+		"updated_at" : "2026-07-21 08:30:54"
+	},
+	{
+		"user_id" : 8,
+		"movie_id" : 120,
+		"score" : 8,
+		"content" : "hay",
+		"created_at" : "2026-07-21 07:19:34",
+		"updated_at" : "2026-07-21 07:22:50"
+	}
+]}

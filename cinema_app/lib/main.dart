@@ -1,49 +1,78 @@
-import 'package:flutter/material.dart';
-import 'TrangChu.dart';
-import 'NoiDung.dart';
-import 'LienHe.dart';
 
-void main() => runApp(const MyApp());
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
+
+import 'core/firebase/deep_link_service.dart';
+import 'firebase_options.dart';
+import 'providers/auth_provider.dart';
+import 'providers/theme_provider.dart';
+import 'routes/app_router.dart';
+import 'routes/app_routes.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Khởi tạo Firebase với cấu hình theo platform
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // Khởi tạo theme sáng/tối
+  await ThemeProvider.instance.initTheme();
+
+  // Kiểm tra phiên đăng nhập đã lưu từ trước
+  await AuthProvider.instance.checkAuthStatus();
+
+  // Lắng nghe deep link quên mật khẩu
+  await DeepLinkService.instance.init();
+
+  runApp(const CinemaApp());
+}
+
+class CinemaApp extends StatelessWidget {
+  const CinemaApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        scaffoldBackgroundColor: Colors.pink[50],
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.pink),
-      ),
-      home: const MainPage(),
-    );
-  }
-}
-class MainPage extends StatefulWidget {
-  const MainPage({super.key});
-  @override
-  State<MainPage> createState() => _MainPageState();
-}
-class _MainPageState extends State<MainPage> {
-  int _index = 0;
-  final List<Widget> _pages = const [
-    TrangChuPage(),
-    NoiDungPage(),
-    LienHePage(),
-  ];
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: _pages[_index],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _index,
-        onTap: (i) => setState(() => _index = i),
-        backgroundColor: Colors.pink[100], selectedItemColor: Colors.pink[800],
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Trang Chủ'),
-          BottomNavigationBarItem(icon: Icon(Icons.article), label: 'Nội Dung'),
-          BottomNavigationBarItem(icon: Icon(Icons.phone), label: 'Liên Hệ'),
-        ],
-      ),
+    final bool isAlreadyLoggedIn =
+        AuthProvider.instance.isAuthenticated;
+
+    return ListenableBuilder(
+      listenable: ThemeProvider.instance,
+      builder: (context, _) {
+        return MaterialApp(
+          title: 'PhimHay24h',
+          debugShowCheckedModeBanner: false,
+          navigatorKey: DeepLinkService.navigatorKey,
+          themeMode: ThemeProvider.instance.themeMode,
+          theme: ThemeData(
+            brightness: Brightness.light,
+            primaryColor: const Color(0xFFFF4B5C),
+            scaffoldBackgroundColor: const Color(0xFFFAFAFA),
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFFFF4B5C),
+              primary: const Color(0xFFFF4B5C),
+              brightness: Brightness.light,
+            ),
+            useMaterial3: true,
+          ),
+          darkTheme: ThemeData(
+            brightness: Brightness.dark,
+            primaryColor: const Color(0xFFFF4B5C),
+            scaffoldBackgroundColor: const Color(0xFF121212),
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFFFF4B5C),
+              primary: const Color(0xFFFF4B5C),
+              brightness: Brightness.dark,
+            ),
+            useMaterial3: true,
+          ),
+          initialRoute:
+              isAlreadyLoggedIn ? AppRoutes.home : AppRoutes.login,
+          routes: AppRouter.routes,
+          onGenerateRoute: AppRouter.onGenerateRoute,
+        );
+      },
     );
   }
 }
