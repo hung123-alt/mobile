@@ -137,13 +137,21 @@ class ProfilePage extends StatelessWidget {
                           ),
                           child: Column(
                             children: [
+                              if (user != null && user.getIsAdmin()) ...[
+                                _buildSettingItem(
+                                  icon: Icons.admin_panel_settings_outlined,
+                                  title: 'Bảng điều khiển Admin',
+                                  onTap: () {
+                                    Navigator.pushNamed(context, AppRoutes.adminDashboard);
+                                  },
+                                ),
+                                const Divider(height: 1, indent: 52),
+                              ],
                               _buildSettingItem(
                                 icon: Icons.access_time_rounded,
                                 title: 'Lịch sử xem',
                                 onTap: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Lịch sử xem phim')),
-                                  );
+                                  Navigator.pushNamed(context, AppRoutes.watchHistory);
                                 },
                               ),
                               const Divider(height: 1, indent: 52),

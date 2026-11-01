@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../pages/account_info_page.dart';
+import '../pages/admin_dashboard_page.dart';
 import '../pages/category_page.dart';
 import '../pages/favorite_page.dart';
 import '../pages/forgot_password_page.dart';
@@ -8,6 +9,7 @@ import '../pages/login_page.dart';
 import '../pages/profile_page.dart';
 import '../pages/register_page.dart';
 import '../pages/search_page.dart';
+import '../pages/watch_history_page.dart';
 import '../widgets/navigation_shell.dart';
 import 'app_routes.dart';
 
@@ -29,6 +31,8 @@ class AppRouter {
         AppRoutes.favorite: (context) => const FavoritePage(),
         AppRoutes.profile: (context) => const ProfilePage(),
         AppRoutes.accountInfo: (context) => const AccountInfoPage(),
+        AppRoutes.watchHistory: (context) => const WatchHistoryPage(),
+        AppRoutes.adminDashboard: (context) => const AdminDashboardPage(),
       };
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {

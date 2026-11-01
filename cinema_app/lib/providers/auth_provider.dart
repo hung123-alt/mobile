@@ -24,6 +24,13 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
+  bool _isConfigNotFoundError(Object e) {
+    final msg = e.toString().toUpperCase();
+    return msg.contains('CONFIGURATION_NOT_FOUND') ||
+        msg.contains('OPERATION-NOT-ALLOWED') ||
+        msg.contains('OPERATION_NOT_ALLOWED');
+  }
+
   /// Kiểm tra trạng thái đăng nhập khi mở app
   Future<void> checkAuthStatus() async {
     _isLoading = true;
@@ -38,7 +45,7 @@ class AuthProvider extends ChangeNotifier {
       final fbUser = _auth.currentUser;
       if (fbUser != null && fbUser.email != null) {
         final user = await _fetchUserFromFirestore(fbUser.email!);
-        if (user != null) {
+        if (user != null && !user.isBanned) {
           _currentUser = user;
           _isLoading = false;
           notifyListeners();
@@ -134,28 +141,18 @@ class AuthProvider extends ChangeNotifier {
 
       final targetEmail =
           userData != null ? (userData['email'] as String? ?? input) : input;
+      final storedPassword = userData?['password']?.toString();
 
-      // 2. Xác thực với Firebase Authentication
+      // 2. Xác thực với Firebase Authentication (nếu đã bật) kết hợp Firestore
+      bool verifiedByFirebaseAuth = false;
       try {
         await _auth.signInWithEmailAndPassword(
           email: targetEmail,
           password: password,
         );
+        verifiedByFirebaseAuth = true;
       } on fb_auth.FirebaseAuthException catch (authEx) {
-        if (authEx.code == 'user-not-found' && userData != null) {
-          try {
-            await _auth.createUserWithEmailAndPassword(
-              email: targetEmail,
-              password: password,
-            );
-          } catch (_) {}
-        } else if (authEx.code == 'wrong-password' ||
-            authEx.code == 'invalid-credential') {
-          _errorMessage = 'Mật khẩu không chính xác';
-          _isLoading = false;
-          notifyListeners();
-          return false;
-        } else if (authEx.code == 'invalid-email') {
+        if (authEx.code == 'invalid-email') {
           _errorMessage = 'Địa chỉ email không hợp lệ';
           _isLoading = false;
           notifyListeners();
@@ -166,33 +163,76 @@ class AuthProvider extends ChangeNotifier {
           notifyListeners();
           return false;
         } else {
+          // Lưu ý: Firebase Auth mặc định bật Email Enumeration Protection nên
+          // khi user migrate từ MySQL chưa có trên Firebase Auth, signIn sẽ trả về
+          // 'invalid-credential' thay vì 'user-not-found'.
           if (userData == null) {
             _errorMessage = 'Tài khoản hoặc mật khẩu không chính xác';
             _isLoading = false;
             notifyListeners();
             return false;
           }
+
+          // Nếu tài khoản đã có trường `password` trên Firestore thì bắt buộc phải khớp
+          if (storedPassword != null &&
+              storedPassword.isNotEmpty &&
+              storedPassword != password) {
+            _errorMessage = 'Mật khẩu không chính xác';
+            _isLoading = false;
+            notifyListeners();
+            return false;
+          }
+
+          // Nếu tài khoản hợp lệ trên Firestore (hoặc tài khoản migrate từ MySQL chưa có `password` thuần),
+          // tự động đồng bộ tạo tài khoản lên Firebase Auth
+          try {
+            await _auth.createUserWithEmailAndPassword(
+              email: targetEmail,
+              password: password,
+            );
+            verifiedByFirebaseAuth = true;
+          } catch (_) {
+            // Bỏ qua nếu đã tồn tại trên Firebase Auth hoặc chưa bật cấu hình
+          }
+        }
+      } catch (e) {
+        // Trường hợp lỗi khác từ Firebase Auth (như CONFIGURATION_NOT_FOUND trên Web)
+        if (userData == null) {
+          _errorMessage = 'Tài khoản hoặc mật khẩu không chính xác';
+          _isLoading = false;
+          notifyListeners();
+          return false;
+        }
+        if (storedPassword != null &&
+            storedPassword.isNotEmpty &&
+            storedPassword != password) {
+          _errorMessage = 'Mật khẩu không chính xác';
+          _isLoading = false;
+          notifyListeners();
+          return false;
         }
       }
 
-      // 3. Nếu chưa có userData trong Firestore, tạo mới từ Firebase Auth
-      if (userData == null) {
+      // 3. Nếu chưa có userData trong Firestore nhưng đăng nhập thành công qua Firebase Auth
+      if (userData == null && verifiedByFirebaseAuth) {
         final fbUser = _auth.currentUser;
         if (fbUser != null) {
           final nextId = await _getNextUserId();
+          final nowIso = DateTime.now().toIso8601String();
           userData = {
             'id': nextId,
             'username': fbUser.displayName ?? input.split('@').first,
             'email': fbUser.email ?? input,
+            'password': password,
             'role': 'user',
             'isBanned': false,
             'is_banned': 0,
-            'createdAt': DateTime.now().toIso8601String(),
-            'created_at': DateTime.now().toIso8601String(),
-            'updatedAt': DateTime.now().toIso8601String(),
-            'updated_at': DateTime.now().toIso8601String(),
-            'lastLogin': DateTime.now().toIso8601String(),
-            'last_login': DateTime.now().toIso8601String(),
+            'createdAt': nowIso,
+            'created_at': nowIso,
+            'updatedAt': nowIso,
+            'updated_at': nowIso,
+            'lastLogin': nowIso,
+            'last_login': nowIso,
           };
           userDocId = nextId.toString();
           await _firestore
@@ -205,10 +245,11 @@ class AuthProvider extends ChangeNotifier {
       if (userData != null) {
         final nowIso = DateTime.now().toIso8601String();
         if (userDocId != null) {
-          _firestore.collection(CollectionNames.users).doc(userDocId).update({
+          _firestore.collection(CollectionNames.users).doc(userDocId).set({
             'lastLogin': nowIso,
             'last_login': nowIso,
-          }).catchError((_) {});
+            'password': password,
+          }, SetOptions(merge: true)).catchError((_) {});
         }
 
         _currentUser = User.fromJson(userData);
@@ -237,7 +278,7 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// Đăng ký tài khoản mới
+  /// Đăng ký tài khoản mới (lưu vào Firestore `users` và đồng bộ Firebase Auth nếu đã bật)
   Future<bool> register({
     required String username,
     required String email,
@@ -265,6 +306,7 @@ class AuthProvider extends ChangeNotifier {
     }
 
     try {
+      // 1. Kiểm tra username đã tồn tại trong Firestore chưa
       final existingUsername = await _firestore
           .collection(CollectionNames.users)
           .where('username', isEqualTo: cleanUsername)
@@ -278,6 +320,7 @@ class AuthProvider extends ChangeNotifier {
         return false;
       }
 
+      // 2. Kiểm tra email đã tồn tại trong Firestore chưa
       final existingEmail = await _firestore
           .collection(CollectionNames.users)
           .where('email', isEqualTo: cleanEmail)
@@ -291,29 +334,38 @@ class AuthProvider extends ChangeNotifier {
         return false;
       }
 
-      fb_auth.UserCredential credential;
+      // 3. Thử tạo tài khoản trên Firebase Auth (nếu đã bật trên Console)
       try {
-        credential = await _auth.createUserWithEmailAndPassword(
+        final credential = await _auth.createUserWithEmailAndPassword(
           email: cleanEmail,
           password: password,
         );
+        await credential.user?.updateDisplayName(cleanUsername);
       } on fb_auth.FirebaseAuthException catch (authEx) {
         if (authEx.code == 'email-already-in-use') {
           _errorMessage = 'Email này đã được đăng ký tài khoản';
+          _isLoading = false;
+          notifyListeners();
+          return false;
         } else if (authEx.code == 'invalid-email') {
           _errorMessage = 'Địa chỉ email không đúng định dạng';
+          _isLoading = false;
+          notifyListeners();
+          return false;
         } else if (authEx.code == 'weak-password') {
           _errorMessage = 'Mật khẩu quá yếu, vui lòng chọn mật khẩu mạnh hơn';
-        } else {
-          _errorMessage = 'Đăng ký thất bại: ${authEx.message}';
+          _isLoading = false;
+          notifyListeners();
+          return false;
+        } else if (!_isConfigNotFoundError(authEx)) {
+          debugPrint('FirebaseAuth register warning: ${authEx.code} - ${authEx.message}');
         }
-        _isLoading = false;
-        notifyListeners();
-        return false;
+      } catch (e) {
+        // Nếu Firebase Auth chưa bật (CONFIGURATION_NOT_FOUND), vẫn tiếp tục lưu vào Firestore
+        debugPrint('FirebaseAuth register skipped (using Firestore): $e');
       }
 
-      await credential.user?.updateDisplayName(cleanUsername);
-
+      // 4. Lưu tài khoản mới vào Firestore collection `users`
       final nextId = await _getNextUserId();
       final now = DateTime.now().toIso8601String();
 
@@ -321,6 +373,7 @@ class AuthProvider extends ChangeNotifier {
         'id': nextId,
         'username': cleanUsername,
         'email': cleanEmail,
+        'password': password,
         'avatarUrl': null,
         'avatar_url': null,
         'role': 'user',
@@ -359,7 +412,8 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// Gửi email đặt lại mật khẩu (kiểm tra email tồn tại trong Firestore trước)
+  /// Gửi email đặt lại mật khẩu qua Firebase Auth
+  /// (Tự động đồng bộ user từ Firestore lên Firebase Auth nếu user cũ chưa có trên Firebase Auth)
   Future<bool> sendPasswordReset(String email) async {
     _isLoading = true;
     _errorMessage = null;
@@ -374,6 +428,7 @@ class AuthProvider extends ChangeNotifier {
     }
 
     try {
+      // 1. Kiểm tra email có trong collection `users` của Firestore không
       final snap = await _firestore
           .collection(CollectionNames.users)
           .where('email', isEqualTo: cleanEmail)
@@ -387,37 +442,64 @@ class AuthProvider extends ChangeNotifier {
         return false;
       }
 
+      final userData = snap.docs.first.data();
+      final fallbackPass =
+          userData['password']?.toString() ?? 'TempPass#2026!';
+
+      // 2. Nếu user trong Firestore (migrate từ MySQL) chưa tồn tại trên Firebase Auth,
+      // tự động khởi tạo user đó trên Firebase Auth trước để Firebase gửi được email reset.
+      try {
+        await _auth.createUserWithEmailAndPassword(
+          email: cleanEmail,
+          password: fallbackPass.length >= 6 ? fallbackPass : 'TempPass#2026!',
+        );
+        await _auth.signOut();
+      } catch (_) {
+        // Nếu đã tồn tại (email-already-in-use) thì bỏ qua và tiến hành gửi mail
+      }
+
+      // 3. Gửi email đặt lại mật khẩu qua Firebase Auth
       await _auth.sendPasswordResetEmail(email: cleanEmail);
 
       _isLoading = false;
       notifyListeners();
       return true;
     } on fb_auth.FirebaseAuthException catch (e) {
-      switch (e.code) {
-        case 'invalid-email':
-          _errorMessage = 'Địa chỉ email không hợp lệ';
-          break;
-        case 'user-not-found':
-          _errorMessage = 'Email này chưa được đăng ký tài khoản';
-          break;
-        case 'too-many-requests':
-          _errorMessage =
-              'Thao tác quá nhiều lần, vui lòng thử lại sau ít phút';
-          break;
-        case 'network-request-failed':
-          _errorMessage =
-              'Lỗi kết nối mạng, vui lòng kiểm tra lại đường truyền';
-          break;
-        default:
-          _errorMessage =
-              'Không thể gửi email đặt lại mật khẩu: ${e.message ?? e.code}';
+      if (_isConfigNotFoundError(e)) {
+        _errorMessage =
+            'Chưa bật Email/Password trong mục Authentication trên Firebase Console. Vui lòng bật để gửi email!';
+      } else {
+        switch (e.code) {
+          case 'invalid-email':
+            _errorMessage = 'Địa chỉ email không hợp lệ';
+            break;
+          case 'user-not-found':
+            _errorMessage = 'Email này chưa được đăng ký tài khoản';
+            break;
+          case 'too-many-requests':
+            _errorMessage =
+                'Thao tác quá nhiều lần, vui lòng thử lại sau ít phút';
+            break;
+          case 'network-request-failed':
+            _errorMessage =
+                'Lỗi kết nối mạng, vui lòng kiểm tra lại đường truyền';
+            break;
+          default:
+            _errorMessage =
+                'Không thể gửi email đặt lại mật khẩu: ${e.message ?? e.code}';
+        }
       }
       _isLoading = false;
       notifyListeners();
       return false;
     } catch (e) {
       debugPrint('sendPasswordReset error: $e');
-      _errorMessage = 'Đã xảy ra lỗi khi gửi liên kết đặt lại mật khẩu';
+      if (_isConfigNotFoundError(e)) {
+        _errorMessage =
+            'Chưa bật Email/Password trong mục Authentication trên Firebase Console. Vui lòng bật để gửi email!';
+      } else {
+        _errorMessage = 'Đã xảy ra lỗi khi gửi liên kết đặt lại mật khẩu';
+      }
       _isLoading = false;
       notifyListeners();
       return false;
@@ -453,7 +535,6 @@ class AuthProvider extends ChangeNotifier {
     }
 
     try {
-      // 1. Nếu người dùng đổi username khác với username hiện tại, kiểm tra trùng lặp
       if (cleanUsername != _currentUser!.username) {
         final existingUsername = await _firestore
             .collection(CollectionNames.users)
@@ -472,7 +553,6 @@ class AuthProvider extends ChangeNotifier {
         }
       }
 
-      // 2. Xác định document ID của user trên Firestore
       String docId = _currentUser!.id.toString();
       final docSnap =
           await _firestore.collection(CollectionNames.users).doc(docId).get();
@@ -525,7 +605,6 @@ class AuthProvider extends ChangeNotifier {
           .doc(docId)
           .set(updateData, SetOptions(merge: true));
 
-      // Cập nhật displayName / photoURL trên Firebase Auth nếu có
       final fbUser = _auth.currentUser;
       if (fbUser != null) {
         try {
@@ -536,7 +615,6 @@ class AuthProvider extends ChangeNotifier {
         } catch (_) {}
       }
 
-      // Cập nhật state cục bộ và SharedPreferences
       _currentUser = _currentUser!.copyWith(
         username: cleanUsername,
         avatarUrl: cleanAvatar,
@@ -564,7 +642,7 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// Đổi mật khẩu (xác thực lại mật khẩu hiện tại với Firebase Auth trước khi đổi)
+  /// Đổi mật khẩu (hỗ trợ cả Firestore `users` và Firebase Auth)
   Future<bool> changePassword({
     required String currentPassword,
     required String newPassword,
@@ -587,57 +665,72 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       final email = _currentUser!.email;
-      final fbUser = _auth.currentUser;
+      final docRef = _firestore
+          .collection(CollectionNames.users)
+          .doc(_currentUser!.id.toString());
+      final docSnap = await docRef.get();
+      final storedPass = docSnap.data()?['password']?.toString();
 
-      if (fbUser != null) {
-        final cred = fb_auth.EmailAuthProvider.credential(
-          email: email,
-          password: currentPassword,
-        );
-        await fbUser.reauthenticateWithCredential(cred);
-        await fbUser.updatePassword(newPassword);
-      } else {
-        final userCred = await _auth.signInWithEmailAndPassword(
-          email: email,
-          password: currentPassword,
-        );
-        await userCred.user?.updatePassword(newPassword);
+      // Kiểm tra mật khẩu hiện tại trong Firestore (nếu có lưu)
+      if (storedPass != null &&
+          storedPass.isNotEmpty &&
+          storedPass != currentPassword) {
+        _errorMessage = 'Mật khẩu hiện tại không chính xác';
+        _isLoading = false;
+        notifyListeners();
+        return false;
       }
 
+      // Thử cập nhật trên Firebase Auth nếu đã bật
+      try {
+        final fbUser = _auth.currentUser;
+        if (fbUser != null) {
+          final cred = fb_auth.EmailAuthProvider.credential(
+            email: email,
+            password: currentPassword,
+          );
+          await fbUser.reauthenticateWithCredential(cred);
+          await fbUser.updatePassword(newPassword);
+        } else {
+          final userCred = await _auth.signInWithEmailAndPassword(
+            email: email,
+            password: currentPassword,
+          );
+          await userCred.user?.updatePassword(newPassword);
+        }
+      } on fb_auth.FirebaseAuthException catch (e) {
+        if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
+          if (storedPass != null &&
+              storedPass.isNotEmpty &&
+              storedPass != currentPassword) {
+            _errorMessage = 'Mật khẩu hiện tại không chính xác';
+            _isLoading = false;
+            notifyListeners();
+            return false;
+          }
+          // Nếu tài khoản migrate chưa có trên Firebase Auth, tự động tạo với mật khẩu mới
+          try {
+            await _auth.createUserWithEmailAndPassword(
+              email: email,
+              password: newPassword,
+            );
+          } catch (_) {}
+        } else if (!_isConfigNotFoundError(e) && e.code != 'user-not-found') {
+          debugPrint('FirebaseAuth changePassword warning: ${e.code}');
+        }
+      } catch (_) {}
+
+      // Lưu mật khẩu mới vào Firestore
       final nowIso = DateTime.now().toIso8601String();
-      await _firestore
-          .collection(CollectionNames.users)
-          .doc(_currentUser!.id.toString())
-          .set({
+      await docRef.set({
+        'password': newPassword,
         'updatedAt': nowIso,
         'updated_at': nowIso,
-      }, SetOptions(merge: true)).catchError((_) {});
+      }, SetOptions(merge: true));
 
       _isLoading = false;
       notifyListeners();
       return true;
-    } on fb_auth.FirebaseAuthException catch (e) {
-      switch (e.code) {
-        case 'wrong-password':
-        case 'invalid-credential':
-          _errorMessage = 'Mật khẩu hiện tại không chính xác';
-          break;
-        case 'weak-password':
-          _errorMessage = 'Mật khẩu mới quá yếu (cần ít nhất 6 ký tự)';
-          break;
-        case 'requires-recent-login':
-          _errorMessage = 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại';
-          break;
-        case 'too-many-requests':
-          _errorMessage =
-              'Thao tác quá nhiều lần, vui lòng thử lại sau ít phút';
-          break;
-        default:
-          _errorMessage = 'Đổi mật khẩu thất bại: ${e.message ?? e.code}';
-      }
-      _isLoading = false;
-      notifyListeners();
-      return false;
     } catch (e) {
       debugPrint('changePassword error: $e');
       _errorMessage = 'Đã xảy ra lỗi khi đổi mật khẩu';

@@ -10,6 +10,8 @@ class AppRoutes {
   static const String favorite = '/favorite';
   static const String profile = '/profile';
   static const String accountInfo = '/account-info';
+  static const String watchHistory = '/watch-history';
+  static const String adminDashboard = '/admin-dashboard';
   static const String random = '/random';
   static const String forbidden = '/403';
   static const String forgotPassword = '/forgot-password';

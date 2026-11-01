@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../models/episode_model.dart';
 import '../models/movie_model.dart';
+import '../providers/watch_history_provider.dart';
+import '../widgets/app_top_navbar.dart';
+import '../widgets/comment_section.dart';
 import '../widgets/embed_video_player.dart';
 import '../widgets/episode_grid.dart';
 
-/// Trang xem phim (Player) - phát trực tiếp từ `embedUrl` của tập phim trong Firestore.
+/// Trang xem phim (Player) - có dùng chung `AppTopNavbar`, phát trực tiếp từ `embedUrl`,
+/// tự động lưu lịch sử xem và hiển thị khu vực Bình luận ở bên dưới.
 class PlayerPage extends StatefulWidget {
   final Movie movie;
   final int initialEpisode;
@@ -44,6 +48,7 @@ class _PlayerPageState extends State<PlayerPage> {
             orElse: () => _episodes.first,
           );
       setState(() => _isLoadingEpisodes = false);
+      _recordCurrentWatch();
       return;
     }
 
@@ -63,6 +68,16 @@ class _PlayerPageState extends State<PlayerPage> {
       _currentEpisode = chosen;
       _isLoadingEpisodes = false;
     });
+
+    _recordCurrentWatch();
+  }
+
+  void _recordCurrentWatch() {
+    WatchHistoryProvider.instance.recordWatch(
+      movie: widget.movie,
+      episode: _currentEpisode,
+      fallbackEpisodeNumber: widget.initialEpisode,
+    );
   }
 
   String get _currentEpisodeLabel {
@@ -80,69 +95,18 @@ class _PlayerPageState extends State<PlayerPage> {
 
     return Scaffold(
       backgroundColor:
-          isDark ? const Color(0xFF121212) : const Color(0xFFF9FAFB),
+          isDark ? const Color(0xFF121212) : const Color(0xFFFAFAFA),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ===== 1. THANH TIÊU ĐỀ TRÊN CÙNG CỦA TRANG XEM PHIM =====
-            Container(
-              color: Colors.black,
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back_rounded,
-                      color: Colors.white,
-                      size: 22,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  Expanded(
-                    child: Text(
-                      '${widget.movie.name} - $_currentEpisodeLabel',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  if (_currentEpisode != null &&
-                      _currentEpisode!.serverName.isNotEmpty)
-                    Container(
-                      margin: const EdgeInsets.only(right: 10),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF4B5C).withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: const Color(0xFFFF4B5C).withValues(alpha: 0.6),
-                        ),
-                      ),
-                      child: Text(
-                        _currentEpisode!.serverName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
+            // ===== 1. NAVBAR DÙNG CHUNG =====
+            const AppTopNavbar(showBackIfCanPop: true),
 
             // ===== 2. KHUNG PLAYER VIDEO NHÚNG (EMBED URL) =====
             Container(
               width: double.infinity,
-              height: 230,
+              height: 225,
               color: Colors.black,
               child: _isLoadingEpisodes
                   ? const Center(
@@ -155,7 +119,7 @@ class _PlayerPageState extends State<PlayerPage> {
                       : _buildEmptyPlayerState(),
             ),
 
-            // ===== 3. DANH SÁCH TẬP PHIM & THÔNG TIN PHIM =====
+            // ===== 3. NỘI DUNG CUỘN: THÔNG TIN PHIM + TẬP PHIM + BÌNH LUẬN =====
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
@@ -163,14 +127,36 @@ class _PlayerPageState extends State<PlayerPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Tên phim & trạng thái tập đang phát
+                    Text(
+                      widget.movie.name,
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? Colors.white : const Color(0xFF0B1021),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${widget.movie.getTypeLabel()} · ${widget.movie.releaseYear ?? 2026} · Đang phát $_currentEpisodeLabel',
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        color: Color(0xFF6B7280),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Phần chọn Tập phim
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        Text(
                           'Tập phim',
                           style: TextStyle(
                             fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w800,
+                            color:
+                                isDark ? Colors.white : const Color(0xFF0B1021),
                           ),
                         ),
                         if (_episodes.isNotEmpty)
@@ -184,9 +170,8 @@ class _PlayerPageState extends State<PlayerPage> {
                           ),
                       ],
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 12),
 
-                    // Lưới chọn tập phim thực tế từ Firestore
                     EpisodeGrid(
                       episodes: _episodes,
                       isLoading: _isLoadingEpisodes,
@@ -195,37 +180,22 @@ class _PlayerPageState extends State<PlayerPage> {
                         setState(() {
                           _currentEpisode = ep;
                         });
+                        _recordCurrentWatch();
                       },
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
 
-                    // Thông tin tóm tắt phim bên dưới
-                    Text(
-                      widget.movie.name,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Divider(
+                      height: 1,
+                      color: isDark
+                          ? const Color(0xFF262626)
+                          : const Color(0xFFE5E7EB),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '${widget.movie.getTypeLabel()} · ${widget.movie.releaseYear ?? 2026} · Đang phát $_currentEpisodeLabel',
-                      style: const TextStyle(
-                        fontSize: 12.5,
-                        color: Color(0xFF6B7280),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      widget.movie.description.isNotEmpty
-                          ? widget.movie.description
-                          : 'Bộ phim hấp dẫn được phát sóng độc quyền trên PhimHay24h.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: isDark ? Colors.white70 : const Color(0xFF4B5563),
-                        height: 1.45,
-                      ),
-                    ),
+                    const SizedBox(height: 18),
+
+                    // ===== 4. KHU VỰC BÌNH LUẬN =====
+                    CommentSection(movieId: widget.movie.id),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),

@@ -78,7 +78,11 @@ class _LoginPageState extends State<LoginPage> {
           behavior: SnackBarBehavior.floating,
         ),
       );
-      Navigator.pushReplacementNamed(context, AppRoutes.home);
+      if (_auth.currentUser?.getIsAdmin() == true) {
+        await _showAdminDestinationDialog();
+      } else {
+        Navigator.pushReplacementNamed(context, AppRoutes.home);
+      }
     } else {
       final msg = _auth.errorMessage ?? 'Đăng nhập thất bại. Vui lòng thử lại!';
       ScaffoldMessenger.of(context).showSnackBar(
@@ -133,6 +137,124 @@ class _LoginPageState extends State<LoginPage> {
       context,
       AppRoutes.forgotPassword,
       arguments: initialEmail,
+    );
+  }
+
+  Future<void> _showAdminDestinationDialog() async {
+    final destination = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF3B4E).withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.admin_panel_settings_rounded,
+                  size: 32,
+                  color: Color(0xFFFF3B4E),
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Xin chào Quản trị viên!',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF111827),
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Tài khoản của bạn có quyền Admin. Bạn muốn truy cập vào giao diện nào?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13.5,
+                  color: Color(0xFF4B5563),
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 22),
+              // Nút 1: Vào Bảng điều khiển Admin
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF3B4E),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: () =>
+                      Navigator.pop(ctx, AppRoutes.adminDashboard),
+                  icon: const Icon(Icons.dashboard_customize_rounded, size: 20),
+                  label: const Text(
+                    'Vào Bảng điều khiển Admin',
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Nút 2: Vào Trang chủ (Giao diện User) - nền sáng rõ nét, chữ đậm dễ nhìn
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF3F4F6),
+                    foregroundColor: const Color(0xFF111827),
+                    elevation: 0,
+                    side: const BorderSide(
+                      color: Color(0xFFD1D5DB),
+                      width: 1.2,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: () => Navigator.pop(ctx, AppRoutes.home),
+                  icon: const Icon(
+                    Icons.home_rounded,
+                    size: 20,
+                    color: Color(0xFF111827),
+                  ),
+                  label: const Text(
+                    'Vào Trang chủ (Giao diện User)',
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(
+      context,
+      destination ?? AppRoutes.adminDashboard,
     );
   }
 

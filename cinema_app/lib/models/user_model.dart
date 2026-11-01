@@ -47,7 +47,7 @@ class User extends IdEntity<int> {
   }
 
   /// Có phải admin không
-  bool getIsAdmin() => role == 'admin';
+  bool getIsAdmin() => role.trim().toLowerCase() == 'admin';
 
   /// Tên viết tắt avatar
   String getInitials() {
