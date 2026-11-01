@@ -126,96 +126,13 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  void _showForgotPasswordDialog() {
-    final resetEmailController = TextEditingController(
-      text: _emailOrUserLoginController.text.contains('@')
-          ? _emailOrUserLoginController.text.trim()
-          : '',
-    );
-    final formKey = GlobalKey<FormState>();
-    bool isSending = false;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(
-            children: [
-              Icon(Icons.lock_reset_rounded, color: Color(0xFFFF5722)),
-              SizedBox(width: 8),
-              Text('Quên mật khẩu', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            ],
-          ),
-          content: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Nhập email đã đăng ký của bạn. Chúng tôi sẽ gửi liên kết đặt lại mật khẩu qua email.',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: resetEmailController,
-                  keyboardType: TextInputType.emailAddress,
-                  validator: Validators.email,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    hintText: 'example@email.com',
-                    prefixIcon: const Icon(Icons.mail_outline_rounded, size: 20),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Hủy', style: TextStyle(color: Color(0xFF6B7280))),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF5722),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: isSending
-                  ? null
-                  : () async {
-                      if (!formKey.currentState!.validate()) return;
-                      setDialogState(() => isSending = true);
-                      final ok = await _auth.sendPasswordReset(resetEmailController.text);
-                      if (ctx.mounted) {
-                        Navigator.pop(ctx);
-                      }
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(ok
-                                ? 'Đã gửi email đặt lại mật khẩu! Vui lòng kiểm tra hộp thư.'
-                                : 'Không thể gửi email đặt lại mật khẩu.'),
-                            backgroundColor: ok ? Colors.green[700] : Colors.red[700],
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      }
-                    },
-              child: isSending
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Text('Gửi email'),
-            ),
-          ],
-        ),
-      ),
+  void _openForgotPasswordPage() {
+    final currentText = _emailOrUserLoginController.text.trim();
+    final initialEmail = currentText.contains('@') ? currentText : null;
+    Navigator.pushNamed(
+      context,
+      AppRoutes.forgotPassword,
+      arguments: initialEmail,
     );
   }
 
@@ -449,7 +366,7 @@ class _LoginPageState extends State<LoginPage> {
           Align(
             alignment: Alignment.centerRight,
             child: GestureDetector(
-              onTap: _showForgotPasswordDialog,
+              onTap: _openForgotPasswordPage,
               child: const Text(
                 'Quên mật khẩu?',
                 style: TextStyle(

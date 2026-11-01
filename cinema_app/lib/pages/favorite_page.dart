@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../models/movie_model.dart';
-import '../providers/theme_provider.dart';
 import '../providers/watchlist_provider.dart';
+import '../widgets/app_top_navbar.dart';
 import 'movie_detail_page.dart';
 
 /// Trang Yêu thích (Component 4 trong ảnh mẫu).
@@ -33,56 +33,8 @@ class _FavoritePageState extends State<FavoritePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top App Bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.menu_rounded,
-                    color: isDark ? Colors.white : const Color(0xFF1F2937),
-                    size: 24,
-                  ),
-                  const SizedBox(width: 8),
-                  RichText(
-                    text: const TextSpan(
-                      children: [
-                        TextSpan(
-                          text: 'PhimHay',
-                          style: TextStyle(
-                            color: Color(0xFF1F2937),
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        TextSpan(
-                          text: '24h',
-                          style: TextStyle(
-                            color: Color(0xFFFF4B5C),
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Spacer(),
-                  ListenableBuilder(
-                    listenable: ThemeProvider.instance,
-                    builder: (context, _) => IconButton(
-                      icon: Icon(
-                        ThemeProvider.instance.isDarkMode
-                            ? Icons.light_mode_outlined
-                            : Icons.dark_mode_outlined,
-                        size: 22,
-                        color: isDark ? Colors.amber : const Color(0xFF4B5563),
-                      ),
-                      onPressed: () => ThemeProvider.instance.toggleTheme(),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            // Top App Bar dùng chung
+            const AppTopNavbar(showBackIfCanPop: true),
 
             // Tiêu đề: "Yêu thích"
             const Padding(
@@ -173,11 +125,9 @@ class _FavoritePageState extends State<FavoritePage> {
                 width: 52,
                 height: 72,
                 color: isDark ? const Color(0xFF262626) : const Color(0xFFE5E7EB),
-                child: movie.posterUrl != null &&
-                        movie.posterUrl!.isNotEmpty &&
-                        movie.posterUrl != '{}'
+                child: movie.displayImageUrl != null
                     ? Image.network(
-                        movie.posterUrl!,
+                        movie.displayImageUrl!,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) =>
                             const Icon(Icons.movie_outlined, size: 24, color: Colors.grey),

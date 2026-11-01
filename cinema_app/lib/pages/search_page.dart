@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../core/firebase/collection_names.dart';
 import '../models/movie_model.dart';
-import '../providers/theme_provider.dart';
+import '../widgets/app_top_navbar.dart';
 import 'movie_detail_page.dart';
 
 /// Trang Tìm kiếm phim (Component 2 trong ảnh mẫu).
@@ -105,55 +105,8 @@ class _SearchPageState extends State<SearchPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header: Back (nếu có thể pop), Logo PhimHay24h, Nút DarkMode
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              child: Row(
-                children: [
-                  if (Navigator.canPop(context))
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back_rounded, size: 22),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  RichText(
-                    text: const TextSpan(
-                      children: [
-                        TextSpan(
-                          text: 'PhimHay',
-                          style: TextStyle(
-                            color: Color(0xFF1F2937),
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        TextSpan(
-                          text: '24h',
-                          style: TextStyle(
-                            color: Color(0xFFFF4B5C),
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Spacer(),
-                  ListenableBuilder(
-                    listenable: ThemeProvider.instance,
-                    builder: (context, _) => IconButton(
-                      icon: Icon(
-                        ThemeProvider.instance.isDarkMode
-                            ? Icons.light_mode_outlined
-                            : Icons.dark_mode_outlined,
-                        size: 22,
-                        color: isDark ? Colors.amber : const Color(0xFF4B5563),
-                      ),
-                      onPressed: () => ThemeProvider.instance.toggleTheme(),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            // Header: Back (nếu có thể pop), Logo PhimHay24h ở giữa, Nút DarkMode
+            const AppTopNavbar(showBackIfCanPop: true),
 
             // Search input box
             Padding(
@@ -371,9 +324,9 @@ class _SearchPageState extends State<SearchPage> {
               width: 50,
               height: 68,
               color: isDark ? const Color(0xFF262626) : const Color(0xFFE5E7EB),
-              child: m.posterUrl != null && m.posterUrl!.isNotEmpty && m.posterUrl != '{}'
+              child: m.displayImageUrl != null
                   ? Image.network(
-                      m.posterUrl!,
+                      m.displayImageUrl!,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) =>
                           const Icon(Icons.movie_outlined, size: 24, color: Colors.grey),

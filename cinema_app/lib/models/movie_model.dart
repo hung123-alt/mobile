@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 import 'base_entity.dart';
 import 'country_model.dart';
 import 'genre_model.dart';
@@ -50,6 +52,24 @@ class Movie extends BaseEntity<int> {
   int getViewCount() => viewCount;
   int getTotalEpisodes() => totalEpisodes;
   bool getIsFeatured() => isFeatured;
+
+  /// URL hình ảnh hiển thị cho bộ phim (ưu tiên bannerUrl theo yêu cầu của người dùng, fallback posterUrl)
+  String? get displayImageUrl {
+    String? raw;
+    if (bannerUrl != null && bannerUrl!.isNotEmpty && bannerUrl != '{}') {
+      raw = bannerUrl;
+    } else if (posterUrl != null && posterUrl!.isNotEmpty && posterUrl != '{}') {
+      raw = posterUrl;
+    }
+    if (raw == null) return null;
+
+    // Trên nền tảng Web (Chrome), server vsmov.com không gắn CORS header khiến trình duyệt chặn tải ảnh.
+    // Dùng wsrv.nl proxy để gắn CORS và tối ưu tải ảnh trên Web.
+    if (kIsWeb && raw.startsWith('http')) {
+      return 'https://wsrv.nl/?url=${Uri.encodeComponent(raw)}';
+    }
+    return raw;
+  }
 
   /// Tên thể loại đầu tiên, dùng cho badge
   String getFirstGenreName() {

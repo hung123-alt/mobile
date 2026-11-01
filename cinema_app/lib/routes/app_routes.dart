@@ -1,4 +1,4 @@
-// TODO: Tên các route (hằng số)
+// Tên các route (hằng số)
 class AppRoutes {
   AppRoutes._();
 
@@ -9,6 +9,7 @@ class AppRoutes {
   static const String category = '/category';
   static const String favorite = '/favorite';
   static const String profile = '/profile';
+  static const String accountInfo = '/account-info';
   static const String random = '/random';
   static const String forbidden = '/403';
   static const String forgotPassword = '/forgot-password';

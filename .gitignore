@@ -1,0 +1,11 @@
+# Dependency directories
+node_modules/
+
+# Firebase credentials
+**/serviceAccountKey*.json
+**/*firebase-adminsdk*.json
+
+# OS files
+.DS_Store
+Thumbs.db
+

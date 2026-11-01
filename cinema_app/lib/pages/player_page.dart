@@ -1,16 +1,23 @@
 import 'package:flutter/material.dart';
 
+import '../models/episode_model.dart';
 import '../models/movie_model.dart';
+import '../widgets/embed_video_player.dart';
+import '../widgets/episode_grid.dart';
 
-/// Trang xem phim (Player) - thiết kế chuẩn theo mẫu Component 7 trong ảnh.
+/// Trang xem phim (Player) - phát trực tiếp từ `embedUrl` của tập phim trong Firestore.
 class PlayerPage extends StatefulWidget {
   final Movie movie;
   final int initialEpisode;
+  final Episode? selectedEpisode;
+  final List<Episode>? episodes;
 
   const PlayerPage({
     super.key,
     required this.movie,
     this.initialEpisode = 1,
+    this.selectedEpisode,
+    this.episodes,
   });
 
   @override
@@ -18,173 +25,137 @@ class PlayerPage extends StatefulWidget {
 }
 
 class _PlayerPageState extends State<PlayerPage> {
-  late int _selectedEpisode;
-  bool _isPlaying = true;
+  List<Episode> _episodes = [];
+  Episode? _currentEpisode;
+  bool _isLoadingEpisodes = true;
 
   @override
   void initState() {
     super.initState();
-    _selectedEpisode = widget.initialEpisode;
+    _initEpisodes();
   }
 
-  int get _totalEpisodes =>
-      widget.movie.totalEpisodes > 0 ? widget.movie.totalEpisodes : 1;
+  Future<void> _initEpisodes() async {
+    if (widget.episodes != null && widget.episodes!.isNotEmpty) {
+      _episodes = widget.episodes!;
+      _currentEpisode = widget.selectedEpisode ??
+          _episodes.firstWhere(
+            (e) => e.episodeNumber == widget.initialEpisode,
+            orElse: () => _episodes.first,
+          );
+      setState(() => _isLoadingEpisodes = false);
+      return;
+    }
+
+    final fetched = await EpisodeGrid.fetchEpisodesForMovie(widget.movie.id);
+    if (!mounted) return;
+
+    Episode? chosen = widget.selectedEpisode;
+    if (chosen == null && fetched.isNotEmpty) {
+      chosen = fetched.firstWhere(
+        (e) => e.episodeNumber == widget.initialEpisode,
+        orElse: () => fetched.first,
+      );
+    }
+
+    setState(() {
+      _episodes = fetched;
+      _currentEpisode = chosen;
+      _isLoadingEpisodes = false;
+    });
+  }
+
+  String get _currentEpisodeLabel {
+    if (_currentEpisode != null) {
+      return _currentEpisode!.getEpisodeLabel();
+    }
+    return 'Tập ${widget.initialEpisode}';
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final currentUrl = _currentEpisode?.embedUrl.trim() ?? '';
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF9FAFB),
+      backgroundColor:
+          isDark ? const Color(0xFF121212) : const Color(0xFFF9FAFB),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ===== 1. KHUNG PLAYER VIDEO ĐEN =====
+            // ===== 1. THANH TIÊU ĐỀ TRÊN CÙNG CỦA TRANG XEM PHIM =====
             Container(
-              width: double.infinity,
-              height: 240,
               color: Colors.black,
-              child: Stack(
-                fit: StackFit.expand,
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              child: Row(
                 children: [
-                  // Hình nền poster / banner cho player
-                  if (widget.movie.bannerUrl != null &&
-                      widget.movie.bannerUrl!.isNotEmpty &&
-                      widget.movie.bannerUrl != '{}')
-                    Opacity(
-                      opacity: 0.65,
-                      child: Image.network(
-                        widget.movie.bannerUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            _buildFallbackPlayerBg(),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.arrow_back_rounded,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  Expanded(
+                    child: Text(
+                      '${widget.movie.name} - $_currentEpisodeLabel',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
                       ),
-                    )
-                  else if (widget.movie.posterUrl != null &&
-                      widget.movie.posterUrl!.isNotEmpty &&
-                      widget.movie.posterUrl != '{}')
-                    Opacity(
-                      opacity: 0.65,
-                      child: Image.network(
-                        widget.movie.posterUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            _buildFallbackPlayerBg(),
-                      ),
-                    )
-                  else
-                    _buildFallbackPlayerBg(),
-
-                  // Thanh tiêu đề player trên cùng
-                  Positioned(
-                    top: 10,
-                    left: 8,
-                    right: 8,
-                    child: Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 22),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                        Expanded(
-                          child: Text(
-                            '${widget.movie.name} - Tập $_selectedEpisode',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.cast_rounded, color: Colors.white, size: 20),
-                          onPressed: () {},
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.picture_in_picture_alt_rounded, color: Colors.white, size: 20),
-                          onPressed: () {},
-                        ),
-                      ],
                     ),
                   ),
-
-                  // Nút play/pause giữa màn hình
-                  Center(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() => _isPlaying = !_isPlaying);
-                      },
-                      child: Container(
-                        width: 54,
-                        height: 54,
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.5),
-                          shape: BoxShape.circle,
+                  if (_currentEpisode != null &&
+                      _currentEpisode!.serverName.isNotEmpty)
+                    Container(
+                      margin: const EdgeInsets.only(right: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF4B5C).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: const Color(0xFFFF4B5C).withValues(alpha: 0.6),
                         ),
-                        child: Icon(
-                          _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                      ),
+                      child: Text(
+                        _currentEpisode!.serverName,
+                        style: const TextStyle(
                           color: Colors.white,
-                          size: 34,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
-                  ),
-
-                  // Thanh tiến trình và nút điều khiển đáy player
-                  Positioned(
-                    bottom: 8,
-                    left: 12,
-                    right: 12,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Thanh Slider tiến trình
-                        SliderTheme(
-                          data: SliderTheme.of(context).copyWith(
-                            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
-                            trackHeight: 2.5,
-                            activeTrackColor: const Color(0xFFFF4B5C),
-                            inactiveTrackColor: Colors.white.withValues(alpha: 0.3),
-                            thumbColor: const Color(0xFFFF4B5C),
-                          ),
-                          child: Slider(
-                            value: 0.28,
-                            onChanged: (v) {},
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            GestureDetector(
-                              onTap: () => setState(() => _isPlaying = !_isPlaying),
-                              child: Icon(
-                                _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            const Text(
-                              '12:34 / 45:20',
-                              style: TextStyle(color: Colors.white, fontSize: 11),
-                            ),
-                            const Spacer(),
-                            const Icon(Icons.settings_outlined, color: Colors.white, size: 18),
-                            const SizedBox(width: 12),
-                            const Icon(Icons.fullscreen_rounded, color: Colors.white, size: 22),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ),
 
-            // ===== 2. DANH SÁCH TẬP PHIM =====
+            // ===== 2. KHUNG PLAYER VIDEO NHÚNG (EMBED URL) =====
+            Container(
+              width: double.infinity,
+              height: 230,
+              color: Colors.black,
+              child: _isLoadingEpisodes
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFFFF4B5C),
+                      ),
+                    )
+                  : currentUrl.isNotEmpty
+                      ? EmbedVideoPlayer(embedUrl: currentUrl)
+                      : _buildEmptyPlayerState(),
+            ),
+
+            // ===== 3. DANH SÁCH TẬP PHIM & THÔNG TIN PHIM =====
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
@@ -192,60 +163,39 @@ class _PlayerPageState extends State<PlayerPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Tập phim',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Tập phim',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (_episodes.isNotEmpty)
+                          Text(
+                            '${_episodes.length} tập',
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              color: Color(0xFF6B7280),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 14),
 
-                    // Lưới các nút chọn tập [1], [2], [3]...
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: List.generate(_totalEpisodes, (index) {
-                        final epNumber = index + 1;
-                        final isSelected = epNumber == _selectedEpisode;
-
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() => _selectedEpisode = epNumber);
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? const Color(0xFFFF4B5C)
-                                  : (isDark ? const Color(0xFF262626) : const Color(0xFFE5E7EB)),
-                              borderRadius: BorderRadius.circular(8),
-                              boxShadow: isSelected
-                                  ? [
-                                      BoxShadow(
-                                        color: const Color(0xFFFF4B5C).withValues(alpha: 0.35),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 3),
-                                      ),
-                                    ]
-                                  : null,
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              '$epNumber',
-                              style: TextStyle(
-                                color: isSelected
-                                    ? Colors.white
-                                    : (isDark ? Colors.white70 : const Color(0xFF374151)),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
+                    // Lưới chọn tập phim thực tế từ Firestore
+                    EpisodeGrid(
+                      episodes: _episodes,
+                      isLoading: _isLoadingEpisodes,
+                      selectedEpisode: _currentEpisode,
+                      onEpisodeTap: (ep) {
+                        setState(() {
+                          _currentEpisode = ep;
+                        });
+                      },
                     ),
                     const SizedBox(height: 24),
 
@@ -259,7 +209,7 @@ class _PlayerPageState extends State<PlayerPage> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      '${widget.movie.getTypeLabel()} · ${widget.movie.releaseYear ?? 2026} · Đang phát tập $_selectedEpisode',
+                      '${widget.movie.getTypeLabel()} · ${widget.movie.releaseYear ?? 2026} · Đang phát $_currentEpisodeLabel',
                       style: const TextStyle(
                         fontSize: 12.5,
                         color: Color(0xFF6B7280),
@@ -286,12 +236,42 @@ class _PlayerPageState extends State<PlayerPage> {
     );
   }
 
-  Widget _buildFallbackPlayerBg() {
-    return Container(
-      color: const Color(0xFF1E1E1E),
-      child: const Center(
-        child: Icon(Icons.movie_rounded, color: Colors.white24, size: 64),
-      ),
+  Widget _buildEmptyPlayerState() {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        if (widget.movie.displayImageUrl != null)
+          Opacity(
+            opacity: 0.35,
+            child: Image.network(
+              widget.movie.displayImageUrl!,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) =>
+                  const SizedBox.shrink(),
+            ),
+          ),
+        const Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.videocam_off_outlined,
+                color: Colors.white70,
+                size: 46,
+              ),
+              SizedBox(height: 10),
+              Text(
+                'Đang cập nhật nguồn phát cho phim này',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

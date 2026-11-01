@@ -151,7 +151,7 @@ class DocIdStrategy {
   /// genres: dùng `slug` → `genres/hanh-dong`
   static String genre(String slug) => slug;
 
-  /// countries: dùng `slug` → `countries/viet-nam`
+
   static String country(String slug) => slug;
 
   /// users: dùng `uid` của Firebase Auth → `users/abc123XYZ`

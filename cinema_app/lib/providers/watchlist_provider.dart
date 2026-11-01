@@ -117,8 +117,10 @@ class WatchlistProvider extends ChangeNotifier {
         await ref.set({
           'id': movie.id,
           'title': movie.name,
-          'slug': movie.slug,
-          'posterUrl': movie.posterUrl,
+          'bannerUrl': movie.bannerUrl,
+          'banner_url': movie.bannerUrl,
+          'posterUrl': movie.displayImageUrl,
+          'poster_url': movie.displayImageUrl,
           'type': movie.type,
           'totalEpisodes': movie.totalEpisodes,
           'avgRating': movie.avgRating,

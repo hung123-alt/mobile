@@ -159,11 +159,9 @@ class _TrendingCarouselState extends State<TrendingCarousel> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              if (movie.posterUrl != null &&
-                  movie.posterUrl!.isNotEmpty &&
-                  movie.posterUrl != '{}')
+              if (movie.displayImageUrl != null)
                 Image.network(
-                  movie.posterUrl!,
+                  movie.displayImageUrl!,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) =>
                       _buildPlaceholder(isDark, movie.name),

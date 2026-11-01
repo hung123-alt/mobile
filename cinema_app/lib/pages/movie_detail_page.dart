@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../models/episode_model.dart';
 import '../models/movie_model.dart';
 import '../providers/watchlist_provider.dart';
+import '../widgets/episode_grid.dart';
 import 'player_page.dart';
 
 /// Trang Chi tiết phim (Component 6 trong ảnh mẫu).
@@ -20,17 +22,46 @@ class MovieDetailPage extends StatefulWidget {
 class _MovieDetailPageState extends State<MovieDetailPage> {
   final WatchlistProvider _watchlist = WatchlistProvider.instance;
 
+  List<Episode> _episodes = [];
+  bool _isLoadingEpisodes = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEpisodes();
+  }
+
+  Future<void> _loadEpisodes() async {
+    final fetched = await EpisodeGrid.fetchEpisodesForMovie(widget.movie.id);
+    if (!mounted) return;
+    setState(() {
+      _episodes = fetched;
+      _isLoadingEpisodes = false;
+    });
+  }
+
+  void _openPlayer({Episode? episode}) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PlayerPage(
+          movie: widget.movie,
+          episodes: _episodes.isNotEmpty ? _episodes : null,
+          selectedEpisode:
+              episode ?? (_episodes.isNotEmpty ? _episodes.first : null),
+          initialEpisode: episode?.episodeNumber ?? 1,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final movie = widget.movie;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final bannerImg = (movie.bannerUrl != null &&
-            movie.bannerUrl!.isNotEmpty &&
-            movie.bannerUrl != '{}')
-        ? movie.bannerUrl
-        : movie.posterUrl;
+    final bannerImg = movie.displayImageUrl;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
@@ -49,7 +80,11 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                   color: Colors.black.withValues(alpha: 0.45),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
+                child: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
               onPressed: () => Navigator.pop(context),
             ),
@@ -61,7 +96,11 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                     color: Colors.black.withValues(alpha: 0.45),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.share_outlined, color: Colors.white, size: 18),
+                  child: const Icon(
+                    Icons.share_outlined,
+                    color: Colors.white,
+                    size: 18,
+                  ),
                 ),
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -84,7 +123,9 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        isFav ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
+                        isFav
+                            ? Icons.favorite_rounded
+                            : Icons.favorite_outline_rounded,
                         color: isFav ? const Color(0xFFFF4B5C) : Colors.white,
                         size: 20,
                       ),
@@ -93,9 +134,11 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                       _watchlist.toggleFavorite(movie);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(isFav
-                              ? 'Đã xóa khỏi danh sách yêu thích'
-                              : 'Đã thêm vào danh sách yêu thích'),
+                          content: Text(
+                            isFav
+                                ? 'Đã xóa khỏi danh sách yêu thích'
+                                : 'Đã thêm vào danh sách yêu thích',
+                          ),
                           duration: const Duration(seconds: 1),
                           behavior: SnackBarBehavior.floating,
                         ),
@@ -110,7 +153,9 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  if (bannerImg != null && bannerImg.isNotEmpty && bannerImg != '{}')
+                  if (bannerImg != null &&
+                      bannerImg.isNotEmpty &&
+                      bannerImg != '{}')
                     Image.network(
                       bannerImg,
                       fit: BoxFit.cover,
@@ -174,7 +219,11 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      const Icon(Icons.star_rounded, size: 16, color: Color(0xFFFFB400)),
+                      const Icon(
+                        Icons.star_rounded,
+                        size: 16,
+                        color: Color(0xFFFFB400),
+                      ),
                       const SizedBox(width: 2),
                       Text(
                         movie.avgRating > 0
@@ -183,7 +232,8 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : const Color(0xFF111827),
+                          color:
+                              isDark ? Colors.white : const Color(0xFF111827),
                         ),
                       ),
                     ],
@@ -197,7 +247,11 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                         child: SizedBox(
                           height: 48,
                           child: ElevatedButton.icon(
-                            icon: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 24),
+                            icon: const Icon(
+                              Icons.play_arrow_rounded,
+                              color: Colors.white,
+                              size: 24,
+                            ),
                             label: const Text(
                               'Xem ngay',
                               style: TextStyle(
@@ -213,14 +267,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                               ),
                               elevation: 2,
                             ),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => PlayerPage(movie: movie),
-                                ),
-                              );
-                            },
+                            onPressed: () => _openPlayer(),
                           ),
                         ),
                       ),
@@ -233,16 +280,24 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                             height: 48,
                             width: 48,
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF262626) : const Color(0xFFF3F4F6),
+                              color: isDark
+                                  ? const Color(0xFF262626)
+                                  : const Color(0xFFF3F4F6),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: isDark ? Colors.transparent : const Color(0xFFE5E7EB),
+                                color: isDark
+                                    ? Colors.transparent
+                                    : const Color(0xFFE5E7EB),
                               ),
                             ),
                             child: IconButton(
                               icon: Icon(
-                                isFav ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-                                color: isFav ? const Color(0xFFFF4B5C) : const Color(0xFF4B5563),
+                                isFav
+                                    ? Icons.bookmark_rounded
+                                    : Icons.bookmark_border_rounded,
+                                color: isFav
+                                    ? const Color(0xFFFF4B5C)
+                                    : const Color(0xFF4B5563),
                                 size: 22,
                               ),
                               onPressed: () => _watchlist.toggleFavorite(movie),
@@ -275,16 +330,34 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                   ),
                   const SizedBox(height: 24),
 
-                  // ===== 4. DIỄN VIÊN =====
-                  const Text(
-                    'Diễn viên',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  // ===== 4. DANH SÁCH TẬP PHIM ĐANG CÓ (Thay thế phần Diễn viên) =====
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Tập phim',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (!_isLoadingEpisodes && _episodes.isNotEmpty)
+                        Text(
+                          '${_episodes.length} tập hiện có',
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            color: Color(0xFF6B7280),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 14),
-                  _buildCastList(isDark),
+                  EpisodeGrid(
+                    episodes: _episodes,
+                    isLoading: _isLoadingEpisodes,
+                    onEpisodeTap: (ep) => _openPlayer(episode: ep),
+                  ),
                   const SizedBox(height: 30),
                 ],
               ),
@@ -297,63 +370,23 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
 
   String _buildMetaString() {
     final type = widget.movie.getTypeLabel();
-    final eps = widget.movie.totalEpisodes > 0 ? '${widget.movie.totalEpisodes} tập' : 'Phim lẻ';
+    final epCount = _episodes.isNotEmpty
+        ? _episodes.length
+        : widget.movie.totalEpisodes;
+    final eps = epCount > 0 ? '$epCount tập' : 'Phim lẻ';
     final year = widget.movie.releaseYear?.toString() ?? '2026';
     return '$type · $eps · $year ·';
-  }
-
-  Widget _buildCastList(bool isDark) {
-    final cast = [
-      {'name': 'Lee Min Ho', 'role': 'Nam chính', 'img': 'https://i.pravatar.cc/150?img=11'},
-      {'name': 'Kim Ji Won', 'role': 'Nữ chính', 'img': 'https://i.pravatar.cc/150?img=5'},
-      {'name': 'Park Seo Joon', 'role': 'Phụ vai', 'img': 'https://i.pravatar.cc/150?img=12'},
-      {'name': 'Song Hye Kyo', 'role': 'Khách mời', 'img': 'https://i.pravatar.cc/150?img=9'},
-    ];
-
-    return SizedBox(
-      height: 95,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        itemCount: cast.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 20),
-        itemBuilder: (context, index) {
-          final c = cast[index];
-          return Column(
-            children: [
-              CircleAvatar(
-                radius: 26,
-                backgroundImage: NetworkImage(c['img']!),
-                backgroundColor: const Color(0xFFE5E7EB),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                c['name']!,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : const Color(0xFF1F2937),
-                ),
-              ),
-              Text(
-                c['role']!,
-                style: const TextStyle(
-                  fontSize: 10.5,
-                  color: Color(0xFF6B7280),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
   }
 
   Widget _buildFallbackBanner() {
     return Container(
       color: const Color(0xFF1F2937),
       child: const Center(
-        child: Icon(Icons.movie_filter_rounded, size: 64, color: Colors.white24),
+        child: Icon(
+          Icons.movie_filter_rounded,
+          size: 64,
+          color: Colors.white24,
+        ),
       ),
     );
   }

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../core/firebase/collection_names.dart';
 import '../models/movie_model.dart';
-import '../providers/theme_provider.dart';
+import '../widgets/app_top_navbar.dart';
 import '../widgets/movie_grid.dart';
 import '../widgets/trending_carousel.dart';
 import 'search_page.dart';
@@ -83,77 +83,8 @@ class _HomePageState extends State<HomePage> {
       body: SafeArea(
         child: Column(
           children: [
-            // ===== 1. APP BAR TÙY BIẾN THEO MOCKUP =====
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  // Nút Menu bên trái
-                  IconButton(
-                    icon: Icon(
-                      Icons.menu_rounded,
-                      color: isDark ? Colors.white : const Color(0xFF1F2937),
-                      size: 24,
-                    ),
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Menu PhimHay24h'),
-                          duration: Duration(milliseconds: 900),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 4),
-
-                  // Logo: "PhimHay" (đen) + "24h" (đỏ #FF4B5C)
-                  RichText(
-                    text: const TextSpan(
-                      children: [
-                        TextSpan(
-                          text: 'PhimHay',
-                          style: TextStyle(
-                            color: Color(0xFF1F2937),
-                            fontSize: 20,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        TextSpan(
-                          text: '24h',
-                          style: TextStyle(
-                            color: Color(0xFFFF4B5C),
-                            fontSize: 20,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const Spacer(),
-
-                  // Nút chuyển chế độ Sáng / Tối (Icon trăng)
-                  ListenableBuilder(
-                    listenable: ThemeProvider.instance,
-                    builder: (context, _) {
-                      final isDarkMode = ThemeProvider.instance.isDarkMode;
-                      return IconButton(
-                        icon: Icon(
-                          isDarkMode
-                              ? Icons.light_mode_outlined
-                              : Icons.dark_mode_outlined,
-                          color: isDark ? Colors.amber : const Color(0xFF4B5563),
-                          size: 22,
-                        ),
-                        onPressed: () => ThemeProvider.instance.toggleTheme(),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
+            // ===== 1. APP BAR DÙNG CHUNG =====
+            const AppTopNavbar(),
 
             // ===== 2. THANH TÌM KIẾM (Search Pill) =====
             Padding(

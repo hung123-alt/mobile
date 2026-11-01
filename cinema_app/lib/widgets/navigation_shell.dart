@@ -5,8 +5,9 @@ import '../pages/favorite_page.dart';
 import '../pages/home_page.dart';
 import '../pages/profile_page.dart';
 import '../pages/search_page.dart';
+import 'app_bottom_bar.dart';
 
-/// Khung chính chứa BottomNavigationBar với 5 tab (chuẩn Component 8 trong ảnh).
+/// Khung chính chứa 5 tab màn hình và sử dụng [AppBottomBar] dùng chung.
 class NavigationShell extends StatefulWidget {
   final int initialTab;
 
@@ -14,6 +15,20 @@ class NavigationShell extends StatefulWidget {
     super.key,
     this.initialTab = 0,
   });
+
+  /// Notifier điều khiển tab hiện tại từ bất kỳ trang con nào
+  static final ValueNotifier<int> tabIndexNotifier = ValueNotifier<int>(0);
+
+  /// Chuyển sang một tab bất kỳ theo [index] (và đóng các trang phụ được push lên nếu có)
+  static void switchToTab(BuildContext context, int index) {
+    tabIndexNotifier.value = index;
+    if (Navigator.canPop(context)) {
+      Navigator.popUntil(context, (route) => route.isFirst);
+    }
+  }
+
+  /// Chuyển về tab Trang chủ (index = 0)
+  static void goHome(BuildContext context) => switchToTab(context, 0);
 
   @override
   State<NavigationShell> createState() => _NavigationShellState();
@@ -26,81 +41,50 @@ class _NavigationShellState extends State<NavigationShell> {
   void initState() {
     super.initState();
     _currentIndexSelected = widget.initialTab;
+    NavigationShell.tabIndexNotifier.value = _currentIndexSelected;
+    NavigationShell.tabIndexNotifier.addListener(_handleExternalTabChange);
+  }
+
+  @override
+  void dispose() {
+    NavigationShell.tabIndexNotifier.removeListener(_handleExternalTabChange);
+    super.dispose();
+  }
+
+  void _handleExternalTabChange() {
+    final target = NavigationShell.tabIndexNotifier.value;
+    if (mounted && _currentIndexSelected != target) {
+      setState(() {
+        _currentIndexSelected = target;
+      });
+    }
   }
 
   void _onItemTapped(int index) {
+    NavigationShell.tabIndexNotifier.value = index;
     setState(() {
       _currentIndexSelected = index;
     });
   }
 
-  final List<Widget> _tabs = [
-    const HomePage(),
-    const SearchPage(),
-    const CategoryPage(),
-    const FavoritePage(),
-    const ProfilePage(),
+  final List<Widget> _tabs = const [
+    HomePage(),
+    SearchPage(),
+    CategoryPage(),
+    FavoritePage(),
+    ProfilePage(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
     return Scaffold(
       body: IndexedStack(
         index: _currentIndexSelected,
         children: _tabs,
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-          currentIndex: _currentIndexSelected,
-          onTap: _onItemTapped,
-          selectedItemColor: const Color(0xFFFF4B5C), // Màu chuẩn active từ ảnh
-          unselectedItemColor: const Color(0xFF6B7280), // Màu chuẩn inactive từ ảnh
-          selectedFontSize: 11,
-          unselectedFontSize: 11,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
-          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
-          items: const [
-            BottomNavigationBarItem(
-              label: 'Trang chủ',
-              icon: Icon(Icons.home_outlined, size: 22),
-              activeIcon: Icon(Icons.home_rounded, size: 22),
-            ),
-            BottomNavigationBarItem(
-              label: 'Tìm kiếm',
-              icon: Icon(Icons.search_rounded, size: 22),
-              activeIcon: Icon(Icons.search_rounded, size: 24),
-            ),
-            BottomNavigationBarItem(
-              label: 'Thể loại',
-              icon: Icon(Icons.grid_view_rounded, size: 20),
-              activeIcon: Icon(Icons.grid_view_rounded, size: 21),
-            ),
-            BottomNavigationBarItem(
-              label: 'Yêu thích',
-              icon: Icon(Icons.favorite_outline_rounded, size: 21),
-              activeIcon: Icon(Icons.favorite_rounded, size: 21),
-            ),
-            BottomNavigationBarItem(
-              label: 'Tài khoản',
-              icon: Icon(Icons.person_outline_rounded, size: 22),
-              activeIcon: Icon(Icons.person_rounded, size: 22),
-            ),
-          ],
-        ),
+      bottomNavigationBar: AppBottomBar(
+        currentIndex: _currentIndexSelected,
+        onTap: _onItemTapped,
       ),
     );
   }

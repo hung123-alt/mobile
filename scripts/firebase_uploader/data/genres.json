@@ -1,0 +1,539 @@
+{
+"select * from genres": [
+	{
+		"id" : 1,
+		"name" : "Hành Động",
+		"slug" : "hanh-dong",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 2,
+		"name" : "Tình Cảm",
+		"slug" : "tinh-cam",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 3,
+		"name" : "Hài Hước",
+		"slug" : "hai-huoc",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 4,
+		"name" : "Cổ Trang",
+		"slug" : "co-trang",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 5,
+		"name" : "Tâm Lý",
+		"slug" : "tam-ly",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 6,
+		"name" : "Hình Sự",
+		"slug" : "hinh-su",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 7,
+		"name" : "Chiến Tranh",
+		"slug" : "chien-tranh",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 8,
+		"name" : "Thể Thao",
+		"slug" : "the-thao",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 9,
+		"name" : "Võ Thuật",
+		"slug" : "vo-thuat",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 10,
+		"name" : "Viễn Tưởng",
+		"slug" : "vien-tuong",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 11,
+		"name" : "Phiêu Lưu",
+		"slug" : "phieu-luu",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 12,
+		"name" : "Khoa Học",
+		"slug" : "khoa-hoc",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 13,
+		"name" : "Kinh Dị",
+		"slug" : "kinh-di",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 15,
+		"name" : "Thần Thoại",
+		"slug" : "than-thoai",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 16,
+		"name" : "Chính Kịch",
+		"slug" : "chinh-kich",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 17,
+		"name" : "Học Đường",
+		"slug" : "hoc-duong",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 18,
+		"name" : "Gia Đình",
+		"slug" : "gia-dinh",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 20,
+		"name" : "Tài Liệu",
+		"slug" : "tai-lieu",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 21,
+		"name" : "Gây Cấn",
+		"slug" : "gay-can",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 22,
+		"name" : "Lịch Sử",
+		"slug" : "lich-su",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 23,
+		"name" : "Hoạt Hình",
+		"slug" : "hoat-hinh",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 24,
+		"name" : "Kiếm Hiệp",
+		"slug" : "kiem-hiep",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 25,
+		"name" : "Khoa Huyễn",
+		"slug" : "khoa-huyen",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 26,
+		"name" : "Chính Trị",
+		"slug" : "chinh-tri",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 27,
+		"name" : "Kinh Điển",
+		"slug" : "kinh-dien",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 28,
+		"name" : "Đời Thường",
+		"slug" : "doi-thuong",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 29,
+		"name" : "Tội Phạm",
+		"slug" : "toi-pham",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 30,
+		"name" : "Siêu Anh Hùng",
+		"slug" : "sieu-anh-hung",
+		"is_visible" : 1,
+		"created_at" : "2026-06-19 18:08:50",
+		"updated_at" : "2026-06-19 18:08:50"
+	},
+	{
+		"id" : 31,
+		"name" : "Thể Loại Test",
+		"slug" : "the-loai-test",
+		"is_visible" : 1,
+		"created_at" : "2026-06-22 15:26:03",
+		"updated_at" : "2026-06-22 15:26:03"
+	},
+	{
+		"id" : 36,
+		"name" : "Cổ Đại",
+		"slug" : "co-dai",
+		"is_visible" : 1,
+		"created_at" : "2026-07-09 05:19:26",
+		"updated_at" : "2026-07-09 05:19:26"
+	},
+	{
+		"id" : 37,
+		"name" : "Lãng Mạn",
+		"slug" : "lang-man",
+		"is_visible" : 1,
+		"created_at" : "2026-07-09 05:19:26",
+		"updated_at" : "2026-07-09 05:19:26"
+	},
+	{
+		"id" : 38,
+		"name" : "Tình Tiết",
+		"slug" : "tinh-tiet",
+		"is_visible" : 1,
+		"created_at" : "2026-07-09 05:19:26",
+		"updated_at" : "2026-07-09 05:19:26"
+	},
+	{
+		"id" : 39,
+		"name" : "Phim Hài",
+		"slug" : "phim-hai",
+		"is_visible" : 1,
+		"created_at" : "2026-07-09 05:19:26",
+		"updated_at" : "2026-07-09 05:19:26"
+	},
+	{
+		"id" : 42,
+		"name" : "Tình Bạn",
+		"slug" : "tinh-ban",
+		"is_visible" : 1,
+		"created_at" : "2026-07-09 05:19:30",
+		"updated_at" : "2026-07-09 05:19:30"
+	},
+	{
+		"id" : 47,
+		"name" : "Giả Tưởng",
+		"slug" : "gia-tuong",
+		"is_visible" : 1,
+		"created_at" : "2026-07-09 05:19:32",
+		"updated_at" : "2026-07-09 05:19:32"
+	},
+	{
+		"id" : 49,
+		"name" : "Tiên Hiệp",
+		"slug" : "tien-hiep",
+		"is_visible" : 1,
+		"created_at" : "2026-07-09 05:19:33",
+		"updated_at" : "2026-07-09 05:19:33"
+	},
+	{
+		"id" : 51,
+		"name" : "Hư Cấu",
+		"slug" : "hu-cau",
+		"is_visible" : 1,
+		"created_at" : "2026-07-09 05:19:33",
+		"updated_at" : "2026-07-09 05:19:33"
+	},
+	{
+		"id" : 52,
+		"name" : "Lãng Mạng",
+		"slug" : "lang-mang",
+		"is_visible" : 1,
+		"created_at" : "2026-07-09 05:19:33",
+		"updated_at" : "2026-07-09 05:19:33"
+	},
+	{
+		"id" : 61,
+		"name" : "Đạo Sĩ",
+		"slug" : "dao-si",
+		"is_visible" : 1,
+		"created_at" : "2026-07-09 05:19:38",
+		"updated_at" : "2026-07-09 05:19:38"
+	},
+	{
+		"id" : 65,
+		"name" : "Siêu Nhiên",
+		"slug" : "sieu-nhien",
+		"is_visible" : 1,
+		"created_at" : "2026-07-09 05:19:39",
+		"updated_at" : "2026-07-09 05:19:39"
+	},
+	{
+		"id" : 67,
+		"name" : "Xã Hội Đen",
+		"slug" : "xa-hoi-den",
+		"is_visible" : 1,
+		"created_at" : "2026-07-09 05:19:41",
+		"updated_at" : "2026-07-09 05:19:41"
+	},
+	{
+		"id" : 72,
+		"name" : "Phim Chính Kịch",
+		"slug" : "phim-chinh-kich",
+		"is_visible" : 1,
+		"created_at" : "2026-07-09 05:19:42",
+		"updated_at" : "2026-07-09 05:19:42"
+	},
+	{
+		"id" : 75,
+		"name" : "Võ hiệp",
+		"slug" : "vo-hiep",
+		"is_visible" : 1,
+		"created_at" : "2026-07-09 05:19:45",
+		"updated_at" : "2026-07-09 05:19:45"
+	},
+	{
+		"id" : 85,
+		"name" : "Chủ Đề Thực Tế",
+		"slug" : "chu-de-thuc-te",
+		"is_visible" : 1,
+		"created_at" : "2026-07-09 05:19:49",
+		"updated_at" : "2026-07-09 05:19:49"
+	},
+	{
+		"id" : 119,
+		"name" : "Khoa Học Viễn Tưởng",
+		"slug" : "khoa-hoc-vien-tuong",
+		"is_visible" : 1,
+		"created_at" : "2026-07-09 05:20:04",
+		"updated_at" : "2026-07-09 05:20:04"
+	},
+	{
+		"id" : 122,
+		"name" : "Trả Thù",
+		"slug" : "tra-thu",
+		"is_visible" : 1,
+		"created_at" : "2026-07-09 05:20:06",
+		"updated_at" : "2026-07-09 05:20:06"
+	},
+	{
+		"id" : 130,
+		"name" : "Tạo ra từ AI",
+		"slug" : "tao-ra-tu-ai",
+		"is_visible" : 1,
+		"created_at" : "2026-07-09 05:20:09",
+		"updated_at" : "2026-07-09 05:20:09"
+	},
+	{
+		"id" : 136,
+		"name" : "Hài",
+		"slug" : "hai",
+		"is_visible" : 1,
+		"created_at" : "2026-07-09 05:20:10",
+		"updated_at" : "2026-07-09 05:20:10"
+	},
+	{
+		"id" : 174,
+		"name" : "Hôn Nhân",
+		"slug" : "hon-nhan",
+		"is_visible" : 1,
+		"created_at" : "2026-07-09 05:20:26",
+		"updated_at" : "2026-07-09 05:20:26"
+	},
+	{
+		"id" : 179,
+		"name" : "Giật Gân",
+		"slug" : "giat-gan",
+		"is_visible" : 1,
+		"created_at" : "2026-07-09 05:20:29",
+		"updated_at" : "2026-07-09 05:20:29"
+	},
+	{
+		"id" : 291,
+		"name" : "Phim Hoạt Hình",
+		"slug" : "phim-hoat-hinh",
+		"is_visible" : 1,
+		"created_at" : "2026-07-09 05:21:23",
+		"updated_at" : "2026-07-09 05:21:23"
+	},
+	{
+		"id" : 292,
+		"name" : "Phim Gia Đình",
+		"slug" : "phim-gia-dinh",
+		"is_visible" : 1,
+		"created_at" : "2026-07-09 05:21:23",
+		"updated_at" : "2026-07-09 05:21:23"
+	},
+	{
+		"id" : 294,
+		"name" : "Phim Phiêu Lưu",
+		"slug" : "phim-phieu-luu",
+		"is_visible" : 1,
+		"created_at" : "2026-07-09 05:21:23",
+		"updated_at" : "2026-07-09 05:21:23"
+	},
+	{
+		"id" : 324,
+		"name" : "Thanh Xuân",
+		"slug" : "thanh-xuan",
+		"is_visible" : 1,
+		"created_at" : "2026-07-09 05:21:41",
+		"updated_at" : "2026-07-09 05:21:41"
+	},
+	{
+		"id" : 417,
+		"name" : "Hành Động & Phiêu Lưu",
+		"slug" : "hanh-dong-phieu-luu",
+		"is_visible" : 1,
+		"created_at" : "2026-07-09 07:19:07",
+		"updated_at" : "2026-07-09 07:19:07"
+	},
+	{
+		"id" : 1553,
+		"name" : "Drama",
+		"slug" : "drama",
+		"is_visible" : 1,
+		"created_at" : "2026-07-14 07:05:40",
+		"updated_at" : "2026-07-14 07:05:40"
+	},
+	{
+		"id" : 1564,
+		"name" : "LGBT",
+		"slug" : "lgbt",
+		"is_visible" : 1,
+		"created_at" : "2026-07-14 07:05:46",
+		"updated_at" : "2026-07-14 07:05:46"
+	},
+	{
+		"id" : 1635,
+		"name" : "Chính Trị - Chiến Tranh",
+		"slug" : "chinh-tri-chien-tranh",
+		"is_visible" : 1,
+		"created_at" : "2026-07-14 07:06:32",
+		"updated_at" : "2026-07-14 07:06:32"
+	},
+	{
+		"id" : 1718,
+		"name" : "Tình Yêu Ngọt Ngào",
+		"slug" : "tinh-yeu-ngot-ngao",
+		"is_visible" : 1,
+		"created_at" : "2026-07-14 07:07:25",
+		"updated_at" : "2026-07-14 07:07:25"
+	},
+	{
+		"id" : 1727,
+		"name" : "Tiểu Thuyết Chuyển Thể",
+		"slug" : "tieu-thuyet-chuyen-the",
+		"is_visible" : 1,
+		"created_at" : "2026-07-14 07:07:31",
+		"updated_at" : "2026-07-14 07:07:31"
+	},
+	{
+		"id" : 1849,
+		"name" : "henshin",
+		"slug" : "henshin",
+		"is_visible" : 1,
+		"created_at" : "2026-07-25 19:14:34",
+		"updated_at" : "2026-07-25 19:14:34"
+	},
+	{
+		"id" : 1881,
+		"name" : "Phim Nhạc",
+		"slug" : "phim-nhac",
+		"is_visible" : 1,
+		"created_at" : "2026-07-26 08:13:58",
+		"updated_at" : "2026-07-26 08:13:58"
+	},
+	{
+		"id" : 1989,
+		"name" : "Thiếu Nhi",
+		"slug" : "thieu-nhi",
+		"is_visible" : 1,
+		"created_at" : "2026-07-26 08:14:59",
+		"updated_at" : "2026-07-26 08:14:59"
+	},
+	{
+		"id" : 2180,
+		"name" : "yêu thương",
+		"slug" : "yeu-thuong",
+		"is_visible" : 1,
+		"created_at" : "2026-07-27 03:05:22",
+		"updated_at" : "2026-07-27 03:05:22"
+	},
+	{
+		"id" : 2190,
+		"name" : "Bí Ẩn",
+		"slug" : "bi-an",
+		"is_visible" : 1,
+		"created_at" : "2026-07-27 03:17:35",
+		"updated_at" : "2026-07-27 03:17:35"
+	},
+	{
+		"id" : 2212,
+		"name" : "Action & Adventure",
+		"slug" : "action-adventure",
+		"is_visible" : 1,
+		"created_at" : "2026-07-27 03:17:53",
+		"updated_at" : "2026-07-27 03:17:53"
+	},
+	{
+		"id" : 2213,
+		"name" : "Sci-Fi & Fantasy",
+		"slug" : "sci-fi-fantasy",
+		"is_visible" : 1,
+		"created_at" : "2026-07-27 03:17:53",
+		"updated_at" : "2026-07-27 03:17:53"
+	}
+]}

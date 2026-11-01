@@ -1,0 +1,53 @@
+{
+"select * from notifications": [
+	{
+		"id" : 1,
+		"user_id" : 2,
+		"type" : "system",
+		"title" : "Thông báo test",
+		"content" : null,
+		"link_url" : null,
+		"is_read" : 0,
+		"created_at" : "2026-06-19 10:09:25"
+	},
+	{
+		"id" : 2,
+		"user_id" : 3,
+		"type" : "system",
+		"title" : "phim da dc cap nhat",
+		"content" : "ok",
+		"link_url" : null,
+		"is_read" : 0,
+		"created_at" : "2026-07-26 06:56:53"
+	},
+	{
+		"id" : 3,
+		"user_id" : 3,
+		"type" : "system",
+		"title" : "phim",
+		"content" : "dxd",
+		"link_url" : null,
+		"is_read" : 0,
+		"created_at" : "2026-07-26 07:25:31"
+	},
+	{
+		"id" : 4,
+		"user_id" : 7,
+		"type" : "system",
+		"title" : "c",
+		"content" : "afa",
+		"link_url" : null,
+		"is_read" : 1,
+		"created_at" : "2026-07-26 07:33:26"
+	},
+	{
+		"id" : 5,
+		"user_id" : 7,
+		"type" : "system",
+		"title" : "ạafc",
+		"content" : "anivaomfw",
+		"link_url" : null,
+		"is_read" : 1,
+		"created_at" : "2026-07-27 03:08:36"
+	}
+]}
