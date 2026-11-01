@@ -8,7 +8,9 @@ import '../models/user_model.dart';
 import '../routes/app_routes.dart';
 import '../widgets/admin_bottom_bar.dart';
 import '../widgets/admin_movies_tab.dart';
+import '../widgets/admin_notifications_tab.dart';
 import '../widgets/admin_top_navbar.dart';
+import '../widgets/admin_users_tab.dart';
 
 /// Trang Bảng điều khiển dành cho quản trị viên (role = admin).
 ///
@@ -386,6 +388,16 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   }
                   if (tabIndex == 1) {
                     return AdminMoviesTab(
+                      onDataChanged: _loadDashboardData,
+                    );
+                  }
+                  if (tabIndex == 2) {
+                    return AdminUsersTab(
+                      onDataChanged: _loadDashboardData,
+                    );
+                  }
+                  if (tabIndex == 5) {
+                    return AdminNotificationsTab(
                       onDataChanged: _loadDashboardData,
                     );
                   }
