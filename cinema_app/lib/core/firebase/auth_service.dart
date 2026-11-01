@@ -80,14 +80,58 @@ class AuthService {
     }
   }
 
-  /// Gửi email đặt lại mật khẩu.
+  /// Gửi email đặt lại mật khẩu (Phương án 1: deep link vào app).
+  ///
+  /// Firebase sẽ gửi email chứa link. Nhờ [ActionCodeSettings] với
+  /// `handleCodeInApp: true` + `url: cinemahay24h://reset-password`,
+  /// bấm link trên điện thoại sẽ mở thẳng app thay vì mở trình duyệt.
+  /// App bắt link bằng package `app_links`, lấy `oobCode` rồi gọi
+  /// [confirmPasswordReset] — không cần server riêng, không cần `.env`.
   Future<void> resetPassword(String email) async {
     try {
-      await _auth.sendPasswordResetEmail(email: email.trim());
+      await _auth.sendPasswordResetEmail(
+        email: email.trim(),
+        actionCodeSettings: ActionCodeSettings(
+          url: 'cinemahay24h://reset-password',
+          handleCodeInApp: true,
+          androidPackageName: 'com.example.cinema_app',
+          androidInstallApp: false,
+          iOSBundleId: 'com.example.cinemaApp',
+        ),
+      );
     } on FirebaseAuthException catch (e) {
       throw FirestoreException(e.code, _messageOf(e));
     } catch (e) {
       throw FirestoreException('unknown', 'Gửi email thất bại: $e');
+    }
+  }
+
+  /// Kiểm tra mã `oobCode` từ deep link còn hiệu lực không.
+  /// Trả về email của tài khoản xin reset để hiển thị lên UI.
+  Future<String> verifyPasswordResetCode(String oobCode) async {
+    try {
+      return await _auth.verifyPasswordResetCode(oobCode);
+    } on FirebaseAuthException catch (e) {
+      throw FirestoreException(e.code, _messageOf(e));
+    } catch (e) {
+      throw FirestoreException('unknown', 'Mã đặt lại mật khẩu không hợp lệ: $e');
+    }
+  }
+
+  /// Đặt mật khẩu mới bằng mã `oobCode` lấy từ deep link.
+  Future<void> confirmPasswordReset({
+    required String oobCode,
+    required String newPassword,
+  }) async {
+    try {
+      await _auth.confirmPasswordReset(
+        code: oobCode,
+        newPassword: newPassword,
+      );
+    } on FirebaseAuthException catch (e) {
+      throw FirestoreException(e.code, _messageOf(e));
+    } catch (e) {
+      throw FirestoreException('unknown', 'Đặt lại mật khẩu thất bại: $e');
     }
   }
 
@@ -181,6 +225,11 @@ class AuthService {
         return 'Không có kết nối mạng';
       case 'requires-recent-login':
         return 'Phiên đăng nhập đã cũ, hãy đăng nhập lại';
+      case 'invalid-action-code':
+      case 'expired-action-code':
+        // Link trong email chỉ dùng 1 lần và có hạn — hết hạn hoặc đã dùng
+        // thì Firebase trả 2 mã này. Báo chung để user xin link mới.
+        return 'Liên kết đã hết hạn hoặc đã được sử dụng. Vui lòng yêu cầu gửi lại email.';
       default:
         return e.message ?? 'Lỗi không xác định';
     }
