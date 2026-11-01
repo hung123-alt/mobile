@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
+import 'core/firebase/deep_link_service.dart';
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
@@ -19,6 +20,10 @@ void main() async {
   // Kiểm tra phiên đăng nhập đã lưu từ trước
   await AuthProvider.instance.checkAuthStatus();
 
+  // Lắng nghe deep link quên mật khẩu (Phương án 1) — phải init sau
+  // Firebase nhưng trước runApp để không bỏ lỡ cold-start link.
+  await DeepLinkService.instance.init();
+
   runApp(const CinemaApp());
 }
 
@@ -36,6 +41,7 @@ class CinemaApp extends StatelessWidget {
         return MaterialApp(
           title: 'PhimHay24h',
           debugShowCheckedModeBanner: false,
+          navigatorKey: DeepLinkService.navigatorKey,
           themeMode: ThemeProvider.instance.themeMode,
           theme: ThemeData(
             brightness: Brightness.light,

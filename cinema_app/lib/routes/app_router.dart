@@ -8,6 +8,7 @@ import '../pages/forgot_password_page.dart';
 import '../pages/login_page.dart';
 import '../pages/profile_page.dart';
 import '../pages/register_page.dart';
+import '../pages/reset_password_page.dart';
 import '../pages/search_page.dart';
 import '../pages/watch_history_page.dart';
 import '../widgets/navigation_shell.dart';
@@ -24,6 +25,17 @@ class AppRouter {
           final args = ModalRoute.of(context)?.settings.arguments;
           final initialEmail = args is String ? args : null;
           return ForgotPasswordPage(initialEmail: initialEmail);
+        },
+        AppRoutes.resetPassword: (context) {
+          final args = ModalRoute.of(context)?.settings.arguments;
+          String? oobCode;
+          if (args is String) {
+            oobCode = args;
+          } else if (args is Map) {
+            final raw = args['oobCode'];
+            if (raw is String) oobCode = raw;
+          }
+          return ResetPasswordPage(oobCode: oobCode);
         },
         AppRoutes.home: (context) => const NavigationShell(),
         AppRoutes.search: (context) => const SearchPage(),
