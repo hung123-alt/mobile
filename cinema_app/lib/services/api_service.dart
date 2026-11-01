@@ -142,6 +142,22 @@ class ApiService {
 
     return _handle<T>(response, parser);
   }
+  
+  /// PATCH - không cần dữ liệu trả về
+  Future<void> patchVoid(
+    String path,
+    Map<String, dynamic> body,
+  ) async {
+    final response = await _client
+        .patch(
+          _buildUri(path),
+          headers: _headers(),
+          body: jsonEncode(body),
+        )
+        .timeout(const Duration(seconds: 15));
+
+    _checkStatus(response);
+  }
 
   /// DELETE - không cần dữ liệu trả về
   Future<void> delete(String path) async {
