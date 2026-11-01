@@ -8,35 +8,34 @@ class CollectionNames {
 
   static const String users = 'users';
 
-  /// Thể loại - server/src/modules/genres/genre.entity.ts
+  /// Thể loại phim (danh mục genres)
   static const String genres = 'genres';
 
-  /// Quốc gia - server/src/modules/countries/countries.entity.ts
+  /// Quốc gia (danh mục countries)
   static const String countries = 'countries';
 
-  /// Tập phim - server/src/modules/episodes/episode.entity.ts
+  /// Tập phim (collection episodes, lọc theo movieId)
   static const String episodes = 'episodes';
 
-  /// Bình luận - server/src/modules/comments/comment.entity.ts
-  /// (Lưu ý: tên bảng là `comments` dù tên class là `CommentEntity`)
+  /// Bình luận (collection comments / sub-collection movies/{slug}/comments)
   static const String comments = 'comments';
 
-  /// Đánh giá - server/src/modules/ratings/rating.entity.ts
+  /// Đánh giá (sub-collection movies/{slug}/ratings)
   static const String ratings = 'ratings';
 
-  /// Yêu thích - server/src/modules/favorites/favorite.entity.ts
+  /// Yêu thích (sub-collection users/{uid}/favorites)
   static const String favorites = 'favorites';
 
-  /// Danh sách xem - server/src/modules/watchlist/watchlist.entity.ts
+  /// Danh sách xem sau (sub-collection users/{uid}/watchlist)
   static const String watchlist = 'watchlist';
 
-  /// Lịch sử xem - server/src/modules/watch-history/watch-history.entity.ts
+  /// Lịch sử xem (top-level watch_history, docId = {uid}_{movieId})
   static const String watchHistory = 'watch_history';
 
-  /// Thông báo - server/src/modules/notifications/notification.entity.ts
+  /// Thông báo (sub-collection users/{uid}/notifications)
   static const String notifications = 'notifications';
 
-  /// Báo lỗi phim - server/src/modules/error-reports/error-report.entity.ts
+  /// Báo lỗi phim (top-level error_reports)
   static const String errorReports = 'error_reports';
 
   // ============================================================
@@ -58,7 +57,10 @@ class CollectionNames {
   /// Danh sách xem của 1 user: users/{uid}/watchlist
   static String userWatchlist(String uid) => '$users/$uid/$watchlist';
 
-  /// Lịch sử xem của 1 user: users/{uid}/watch_history
+  /// Lịch sử xem — CANONICAL hiện tại là top-level `watch_history`
+  /// với docId = `{userIdInt}_{movieId}` (VD `12_45`), code trong
+  /// `WatchHistoryProvider.recordWatch` đang dùng cách này.
+  /// Helper sub-collection dưới đây giữ lại cho tương lai, hiện chưa dùng.
   static String userWatchHistory(String uid) => '$users/$uid/$watchHistory';
 
   /// Thông báo của 1 user: users/{uid}/notifications
@@ -123,15 +125,10 @@ class FieldNames {
   static const String isRead = 'isRead';
   static const String linkUrl = 'linkUrl';
 
-  /// Tên field chỉ dùng ở TRONG Firestore (tự sinh, không có trong MySQL).
-  ///
-  /// Giải thích: MySQL tự sinh `id` tăng dần (1, 2, 3...). Firestore thì
-  /// Document ID là chuỗi ngẫu nhiên ("Xy7K2mPq..."). Model Dart đang khai báo
-  /// `extends BaseEntity<int>` nên vẫn CẦN một field `id` kiểu int.
-  ///
-  /// Ta giải quyết bằng cách: **Document ID dùng slug/uid (dễ đọc),
-  /// còn field `id` bên trong vẫn giữ kiểu int** để model không phải sửa.
-  /// `docId` lưu Document ID để dùng lại khi cần update/delete.
+  /// Field phụ lưu Document ID để dùng lại khi update/delete.
+  /// Firestore Document ID luôn là chuỗi (ví dụ slug hoặc uid).
+  /// Các model Dart vẫn giữ field `id` kiểu int để tương thích
+  /// với Backend REST API, còn `docId` là định danh Firestore.
   static const String docId = '__docId';
 }
 
@@ -156,10 +153,9 @@ class DocIdStrategy {
 
   /// users: dùng `uid` của Firebase Auth → `users/abc123XYZ`
   ///
-  /// Đây là điểm khác biệt lớn nhất so với hệ thống cũ:
-  /// bảng `users` cũ có `password_hash` + `reset_token`, giờ do
-  /// Firebase Auth quản lý. Vì vậy collection `users` của ta chỉ chứa
-  /// THÔNG TIN HIỂN THỊ (tên, avatar, vai trò) chứ không chứa mật khẩu.
+  /// Mật khẩu do Firebase Auth quản lý (đã hash + salt).
+  /// Collection `users` chỉ chứa THÔNG TIN HIỂN THỊ
+  /// (tên, avatar, vai trò) — KHÔNG bao giờ lưu mật khẩu.
   static String user(String uid) => uid;
 
   /// episodes: dùng `{movieId}_{tap}` → `episodes/12_5` (tập 5 của phim 12)
@@ -170,43 +166,22 @@ class DocIdStrategy {
     return '${movieId}_$episodeNumber';
   }
 
-  /// ratings: dùng `uid` → `ratings/abc123XYZ`
-  ///
-  /// Khớp với MySQL cũ vốn có KHÓA CHÍNH KÉP (user_id, movie_id).
-  /// Với Firestore, dùng uid làm Doc ID là cách chặn 1 user đánh giá
-  /// trùng lặp (ghi đè thay vì tạo bản mới).
+  /// ratings: docId = Firebase Auth `uid` → `ratings/{uid}`
+  /// trong sub-collection `movies/{slug}/ratings`.
+  /// Mỗi user chỉ có 1 doc đánh giá / phim → ghi đè khi chấm lại,
+  /// không tạo bản trùng.
   static String rating(String uid) => uid;
 
-  /// watch_history: dùng `{movieId}` → `watch_history/12`
-  ///
-  /// 1 dòng lịch sử cho mỗi phim. Xem lại tập nào lưu ở field `episodeId`.
-  static String watchHistory(String movieId) => movieId;
+  /// watch_history top-level: docId = `{uidInt}_{movieId}` (ví dụ `12_45`).
+  /// 1 doc / phim / user. Tập đang xem lưu ở field `episodeId`.
+  static String watchHistory(String uidAndMovie) => uidAndMovie;
 
-  /// favorites / watchlist: dùng `movieId` → `favorites/12`
+  /// favorites / watchlist trong sub-collection user:
+  /// `users/{uid}/favorites/{movieId}` → docId = movieId dạng chuỗi.
   static String favorite(String movieId) => movieId;
 }
 
-/// Ghi chú về Firestore Security Rules (không nằm trong code nhưng cần biết)
-///
-/// Trước khi chạy thật, phải viết rules trong Firestore Console, nếu không
-/// mọi lệnh ghi sẽ bị từ chối (PERMISSION_DENIED):
-///
-///   rules_version = '2';
-///   service cloud.firestore {
-///     match /databases/{database}/documents {
-///       match /movies/{movieId} {
-///         allow read: if true;                    // ai cũng xem được phim
-///         allow write: if false;                  // chỉ admin qua SDK
-///       }
-///       match /users/{uid} {
-///         allow read, write: if request.auth.uid == uid;  // chỉ chính chủ
-///       }
-///       match /comments/{commentId} {
-///         allow read: if true;
-///         allow write: if request.auth.uid == request.resource.data.userId;
-///       }
-///     }
-///   }
-///
-/// Ngoài ra cần BẬT BILLING cho Firestore, nếu không mọi truy vấn trả về
-/// lỗi "Missing or insufficient permissions" dù rules đã đúng.
+/// Ghi chú deploy: file rules thật nằm ở `cinema_app/firestore.rules`.
+/// Copy nội dung file đó dán vào Firebase Console → Firestore → Rules,
+/// hoặc chạy `firebase deploy --only firestore:rules` (xem `firebase.json`).
+/// Không sửa rules mẫu ở đây — sửa file `firestore.rules` để khỏi lệch.

@@ -5,8 +5,8 @@ import '../models/page_result.dart';
 
 
 class MovieService {
-
-  /// NestJS `constructor(private readonly xxxService: XxxService) {}`.
+  /// Service Dart gọi Backend REST API qua HTTP (`ApiService`).
+  /// Quy ước giống constructor DI bên backend, nhưng đây là Dart thuần.
   MovieService(this._api);
 
   final ApiService _api;
@@ -62,10 +62,10 @@ class MovieService {
   /// Random nâng cao — lọc theo loại/trạng thái/thể loại rồi random trong
   /// nhóm thỏa điều kiện.
   ///
-  /// Lưu ý khớp với `RandomMovieFilterDto` ở server:
+  /// Khớp với contract của Backend REST API:
   ///   - [genreIds] tối đa 5 phần tử, kết hợp AND (phim phải có ĐỦ các
   ///     thể loại được chọn).
-  ///   - [limit] CHỈ nhận 5, 10 hoặc 15 (server validate bằng @IsIn).
+  ///   - [limit] CHỈ nhận 5, 10 hoặc 15 (backend validate).
   ///   - [sortBy] nhận 'view' | 'new' | 'like' | 'comment'.
   ///
   ///   GET /movies/random/advanced
@@ -92,10 +92,10 @@ class MovieService {
 
   /// Lọc phim nhiều điều kiện + sắp xếp + phân trang.
   ///
-  /// Khớp với `FilterMovieDto` ở server. [sortBy] nhận
+  /// Khớp với contract của Backend REST API. [sortBy] nhận
   /// 'newest' | 'imdb' | 'rating' | 'views'.
   ///
-  /// Server trả JSON dạng `{ data, total, page, limit, totalPages, hasMore }`
+  /// Backend trả JSON dạng `{ data, total, page, limit, totalPages, hasMore }`
   /// — khác với [PageResult] đang mong field tên `items`. Vì vậy phải đổi
   /// tên field `data` -> `items` trước khi đưa vào `PageResult.fromJson`,
   /// thay vì sửa [PageResult] (PageResult còn dùng chung cho bình luận,

@@ -185,7 +185,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
       );
     }
 
-    // Ưu tiên kết quả của NestJS nếu API khả dụng.
+    // Ưu tiên kết quả gợi ý từ Backend REST API nếu còn khả dụng.
     try {
       final detail = await MovieService(_apiService)
           .getDetail(widget.movie.slug)

@@ -1,12 +1,12 @@
-/// Response chung của API - dùng Generic với 2 tham số.
+/// Response chung của Backend REST API - dùng Generic với 2 tham số.
 ///
-/// Theo yêu cầu tuần 7 - "Generics với nhiều tham số":
+/// Kiến thức Dart bạn đã học (Generics nhiều tham số):
 ///   class ApiResponse<T, E> { ... }
 ///
 ///   T = kiểu dữ liệu trong trường `data`
 ///   E = kiểu dữ liệu trong trường `error`
 ///
-/// Dùng cho mọi service gọi về backend NestJS:
+/// Dùng cho mọi service Dart gọi Backend qua HTTP:
 ///   final res = await ApiResponse<List<Movie>, String>.fromJson(
 ///     json,
 ///     (e) => (e as List).map((m) => Movie.fromJson(m)).toList(),

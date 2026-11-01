@@ -1,0 +1,118 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Phim / the loai / quoc gia: ai cung doc duoc, chi admin ghi (qua Admin SDK).
+    // App mobile Dart chi doc, khong ghi truc tiep.
+    match /movies/{slug} {
+      allow read: if true;
+      allow write: if false;
+
+      // Danh gia theo phim: movies/{slug}/ratings/{uidAuth}
+      // RatingService (Dart) dung Firebase Auth uid lam docId.
+      match /ratings/{uidAuth} {
+        allow read: if true;
+        allow create, update: if request.auth != null
+          && request.auth.uid == uidAuth
+          && request.resource.data.score is int
+          && request.resource.data.score >= 1
+          && request.resource.data.score <= 10;
+        allow delete: if request.auth != null && request.auth.uid == uidAuth;
+      }
+
+      // Binh luan theo phim (du phong, hien CommentService van goi REST):
+      // movies/{slug}/comments/{commentId}
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if request.auth != null
+          && request.resource.data.userId == request.auth.uid;
+        allow update, delete: if request.auth != null
+          && resource.data.userId == request.auth.uid;
+      }
+
+      // Tap phim sub-collection (du phong): chi doc
+      match /episodes/{episodeId} {
+        allow read: if true;
+        allow write: if false;
+      }
+    }
+
+    // Top-level episodes: EpisodeGrid.fetchEpisodesForMovie where movieId ==
+    match /episodes/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Genres / countries: danh muc doc cong khai
+    match /genres/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /countries/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Ho so user: users/{numericId} (VD users/12).
+    // LUU Y THUC TE: docId hien la so int tu tang (_getNextUserId),
+    // KHONG phai Firebase Auth uid, va man hinh login query
+    // where email == truoc khi dang nhap. Vi vay khong the khoa
+    // request.auth.uid == docId, se gay PERMISSION_DENIED.
+    // Tam thoi: cho doc cong khai de login tim user, chan password.
+    // Ghi chi cho phep khi da dang nhap, va cam password duoi moi dang.
+    match /users/{docId} {
+      allow read: if true;
+      allow create, update: if request.auth != null
+        && !("password" in request.resource.data)
+        && !("passwordHash" in request.resource.data)
+        && !("password_hash" in request.resource.data);
+      allow delete: if false;
+
+      // Du lieu ca nhan: users/{numericId}/favorites, watchlist, notifications
+      // WatchlistProvider dang dung users/{id}/favorites that.
+      match /favorites/{favId} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null;
+      }
+      match /watchlist/{wlId} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null;
+      }
+      match /notifications/{notifId} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null;
+      }
+    }
+
+    // Lich su xem CANONICAL: top-level watch_history, docId = {userId}_{movieId}
+    // WatchHistoryProvider.recordWatch dang set() theo kieu nay.
+    match /watch_history/{docId} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if request.auth != null
+        && !("password" in request.resource.data)
+        && !("passwordHash" in request.resource.data)
+        && !("password_hash" in request.resource.data);
+    }
+
+    // Bao loi phim top-level: MovieDetailPage._submitErrorReport .add()
+    match /error_reports/{docId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if false;
+    }
+
+    // Comment top-level (du phong): ai cung doc, user dang nhap moi ghi
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // Con lai: khoa het
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

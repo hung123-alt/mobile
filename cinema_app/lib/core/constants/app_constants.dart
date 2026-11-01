@@ -3,7 +3,8 @@ class AppConstants {
   AppConstants._();
 
   // ===== API =====
-  /// Base URL backend NestJS
+  /// Base URL của Backend REST API (team backend viết bằng NestJS/TypeScript).
+  /// Mobile Dart KHÔNG chạy NestJS — chỉ gọi HTTP qua `http` package.
   /// - Android emulator: dùng 10.0.2.2 thay vì localhost
   /// - Web / iOS simulator: dùng localhost
   static const String apiBaseUrl = String.fromEnvironment(
