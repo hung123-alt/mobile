@@ -1,0 +1,8 @@
+# Key Firebase Admin SDK — TUYỆT ĐỐI KHÔNG commit lên git
+serviceAccountKey.json
+*-key.json
+service-account*.json
+
+# Script seed: cài đặt node_modules riêng
+node_modules/
+package-lock.json

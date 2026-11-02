@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import '../core/firebase/collection_names.dart';
+import '../core/utils/video_source.dart';
 import '../widgets/admin_bottom_bar.dart';
 import '../widgets/admin_top_navbar.dart';
 
@@ -483,7 +484,11 @@ class _AdminMovieEditPageState extends State<AdminMovieEditPage> {
     );
   }
 
-  /// Hộp thoại Thêm / Sửa tập phim
+  /// Hộp thoại Thêm / Sửa tập phim — hỗ trợ đa nguồn.
+  ///
+  /// Admin chỉ cần dán link thô: YouTube `watch?v=` / `youtu.be` / `shorts/`,
+  /// VSMOV, `.mp4`, `.m3u8`... App tự chuẩn hoá qua [VideoSource.normalize]
+  /// rồi mới lưu, nên phát được hết mà không vỡ link cũ.
   Future<void> _showEpisodeDialog({_EditableEpisode? existing, int? index}) async {
     final nextEpNum = existing?.episodeNumber ?? (_episodes.length + 1);
     final epNumCtrl = TextEditingController(text: nextEpNum.toString());
@@ -545,12 +550,59 @@ class _AdminMovieEditPageState extends State<AdminMovieEditPage> {
               const SizedBox(height: 12),
               TextField(
                 controller: embedUrlCtrl,
+                keyboardType: TextInputType.url,
                 decoration: InputDecoration(
                   labelText: 'Link phát phim (embedUrl) *',
-                  hintText: 'https://...',
+                  hintText:
+                      'Dán mọi link: YouTube watch / youtu.be / shorts, VSMOV, .mp4, .m3u8...',
+                  helperText:
+                      'App tự đổi YouTube watch → embed, giữ nguyên VSMOV / mp4 / m3u8.',
+                  helperMaxLines: 2,
                   isDense: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              // Gợi ý nhanh nguồn phát để admin tự kiểm tra
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: embedUrlCtrl,
+                    builder: (ctx, value, _) {
+                      final raw = value.text.trim();
+                      if (raw.isEmpty) {
+                        return const Text(
+                          'VD: https://www.youtube.com/watch?v=abc... • https://vsmov.../embed... • https://cdn.../phim.m3u8',
+                          style: TextStyle(fontSize: 11, color: Colors.grey),
+                        );
+                      }
+                      final label = VideoSource.detectLabel(raw);
+                      final ok = VideoSource.isSupported(raw);
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            ok ? Icons.check_circle_rounded : Icons.error_rounded,
+                            size: 14,
+                            color: ok ? Colors.green : Colors.red,
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              'Đã nhận diện: $label${ok ? '' : ' — link chưa hợp lệ'}',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                                color: ok ? Colors.green[700] : Colors.red[700],
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
               ),
@@ -611,16 +663,47 @@ class _AdminMovieEditPageState extends State<AdminMovieEditPage> {
           ? titleCtrl.text.trim()
           : epNum.toString();
       final durationSec = _parseDurationInput(durationCtrl.text.trim());
+      final rawLink = embedUrlCtrl.text.trim();
+
+      // Chuẩn hoá đa nguồn trước khi lưu: YouTube watch -> embed,
+      // VSMOV/mp4/m3u8 giữ nguyên. Báo lỗi ngay nếu link không hợp lệ.
+      if (rawLink.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Vui lòng nhập link phát phim!'),
+            backgroundColor: Colors.red[700],
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+      final normalizedLink = VideoSource.normalize(rawLink);
+      if (!VideoSource.isSupported(normalizedLink)) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Link chưa hợp lệ, kiểm tra lại: $rawLink'),
+            backgroundColor: Colors.red[700],
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+      // Nếu admin để nguyên server mặc định thì tự gợi ý theo nguồn
+      // (YouTube / VSMOV / Server 1...) cho đúng với link vừa dán.
+      final typedServer = serverCtrl.text.trim();
+      final serverName = typedServer.isNotEmpty
+          ? typedServer
+          : VideoSource.suggestServerName(normalizedLink);
 
       final updatedEp = _EditableEpisode(
         docId: existing?.docId,
         id: existing?.id ?? 0,
         episodeNumber: epNum,
         title: epTitle,
-        embedUrl: embedUrlCtrl.text.trim(),
-        serverName: serverCtrl.text.trim().isNotEmpty
-            ? serverCtrl.text.trim()
-            : 'Vietsub',
+        embedUrl: normalizedLink,
+        serverName: serverName.isNotEmpty ? serverName : 'Vietsub',
         durationSeconds: durationSec,
       );
 

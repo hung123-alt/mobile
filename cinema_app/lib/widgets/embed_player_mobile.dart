@@ -3,6 +3,8 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+import '../core/utils/video_source.dart';
+
 Widget buildPlatformEmbedPlayer(String embedUrl) {
   return _MobileEmbedPlayer(embedUrl: embedUrl);
 }
@@ -24,33 +26,15 @@ class _MobileEmbedPlayerState extends State<_MobileEmbedPlayer> {
 
   bool get _isSupportedMobile => Platform.isAndroid || Platform.isIOS;
 
-  // LOP 5 - DANH SACH DOMAIN DUOC PHEP NHUNG VIDEO (P2).
-  //
-  // VÌ SAO CAN?
-  // - WebView bat JavaScriptMode.unrestricted thi trang embed co the chay
-  //   bat ky JS nao (dao coin, phishing, chuyen huong). Gioi han domain
-  //   la lop phong thu re nhat: chi host co trong seed/backend moi duoc mo.
-  // - Mobile khong dung chung WebView nay de render HTML tu server.
-  static const List<String> _allowedEmbedHosts = <String>[
-    'www.youtube.com', // Server 2 = link YouTube backup (seed.sql)
-    'youtube.com',
-    'youtu.be',
-    'www.youtube-nocookie.com',
-    'player.vimeo.com', // du phong neu sau nay them Vimeo
-    'player.twitch.tv', // du phong neu sau nay them Twitch
-  ];
+  /// Giữ tên hàm cũ để code nơi khác (nếu có) vẫn gọi được.
+  /// Delegation sang [VideoSource.isSupported] — chấp nhận mọi link https
+  /// do admin nhập (VSMOV / YouTube / mp4 / m3u8 / embed...), chỉ chặn
+  /// scheme nguy hiểm. Whitelist cứng cũ là nguyên nhân link VSMOV
+  /// bị trắng màn hình.
+  static bool isEmbedUrlAllowed(String rawUrl) =>
+      VideoSource.isSupported(rawUrl);
 
-  /// true neu URL thuoc host duoc phep (khong phan biet hoa thuong).
-  /// Chan luon scheme nguy hiem: file://, javascript:, data:.
-  static bool isEmbedUrlAllowed(String rawUrl) {
-    final uri = Uri.tryParse(rawUrl.trim());
-    if (uri == null) return false;
-    if (uri.scheme != 'https') return false; // LOP 4: embed bat buoc https
-    final host = uri.host.toLowerCase();
-    return _allowedEmbedHosts.any(
-      (allowed) => host == allowed || host.endsWith('.$allowed'),
-    );
-  }
+  String get _normalizedUrl => VideoSource.normalize(widget.embedUrl);
 
   @override
   void initState() {
@@ -62,13 +46,12 @@ class _MobileEmbedPlayerState extends State<_MobileEmbedPlayer> {
   void didUpdateWidget(covariant _MobileEmbedPlayer oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.embedUrl != widget.embedUrl && _controller != null) {
-      // LOP 5: URL moi cung phai qua white-list, tranh doi embed giua chung.
       if (!isEmbedUrlAllowed(widget.embedUrl)) {
         debugPrint('MobileEmbedPlayer: chan embed URL doi giua chung');
         return;
       }
       setState(() => _isLoading = true);
-      final uri = Uri.tryParse(widget.embedUrl);
+      final uri = Uri.tryParse(_normalizedUrl);
       if (uri != null) {
         _controller!.loadRequest(uri);
       }
@@ -78,18 +61,19 @@ class _MobileEmbedPlayerState extends State<_MobileEmbedPlayer> {
   void _initController() {
     if (!_isSupportedMobile) return;
 
-    // LOP 5: chan ngay tu dau neu URL khong thuoc domain cho phep.
     if (!isEmbedUrlAllowed(widget.embedUrl)) {
-      debugPrint('MobileEmbedPlayer: chan embed URL khong hop le');
-      return; // _controller giu null -> UI hien thong bao thay vi WebView
+      debugPrint(
+        'MobileEmbedPlayer: chan embed URL khong hop le: ${widget.embedUrl}',
+      );
+      return;
     }
 
-    final uri = Uri.tryParse(widget.embedUrl);
+    final uri = Uri.tryParse(_normalizedUrl);
     if (uri == null) return;
 
     final ctrl = WebViewController()
-      // LOP 5: chi WebView PHIM moi duoc unrestricted. Khong dung che do
-      // nay cho bat ky WebView nao khac (VD hien thi noi dung server).
+      // Chỉ WebView PHIM mới được unrestricted. Không dùng chế độ
+      // này cho bất kỳ WebView nào khác (VD hiển thị nội dung server).
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.black)
       ..setNavigationDelegate(
@@ -100,11 +84,20 @@ class _MobileEmbedPlayerState extends State<_MobileEmbedPlayer> {
           onPageFinished: (_) {
             if (mounted) setState(() => _isLoading = false);
           },
-          // LOP 5: chan chuyen huong ra ngoai + chan cua so moi.
-          // WebView khong ho tro new window: moi URL khong thuoc
-          // white-list deu bi prevent (ngan phishing/chuyen huong doc hai).
+          onWebResourceError: (error) {
+            debugPrint('MobileEmbedPlayer resource error: $error');
+            if (mounted) setState(() => _isLoading = false);
+          },
+          // Chặn điều hướng nguy hiểm + cửa sổ mới, nhưng cho phép
+          // điều hướng https nội bộ của trang nhúng (VSMOV/YouTube
+          // hay chuyển hướng qua CDN của họ). Chỉ prevent khi gặp
+          // scheme lạ (file://, javascript:, data:, blob:...).
           onNavigationRequest: (request) {
-            if (!isEmbedUrlAllowed(request.url)) {
+            final lower = request.url.trim().toLowerCase();
+            if (lower.startsWith('javascript:') ||
+                lower.startsWith('data:') ||
+                lower.startsWith('file:') ||
+                lower.startsWith('blob:')) {
               debugPrint(
                 'MobileEmbedPlayer: prevent navigation toi ${request.url}',
               );
@@ -122,13 +115,29 @@ class _MobileEmbedPlayerState extends State<_MobileEmbedPlayer> {
   @override
   Widget build(BuildContext context) {
     if (!_isSupportedMobile || _controller == null) {
+      final ok = VideoSource.isSupported(widget.embedUrl);
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Text(
-            'Đang phát nguồn: ${widget.embedUrl}',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                ok
+                    ? Icons.play_circle_outline_rounded
+                    : Icons.link_off_rounded,
+                color: Colors.white70,
+                size: 40,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                ok
+                    ? 'Đang tải nguồn phát...'
+                    : 'Link phát chưa hợp lệ:\n${widget.embedUrl}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+            ],
           ),
         ),
       );
@@ -148,4 +157,3 @@ class _MobileEmbedPlayerState extends State<_MobileEmbedPlayer> {
     );
   }
 }
-
