@@ -15,6 +15,7 @@ import '../services/rating_service.dart';
 import '../widgets/episode_grid.dart';
 import '../widgets/error_report_modal.dart';
 import '../widgets/movie_card.dart';
+import '../widgets/movie_share_helper.dart';
 import '../widgets/rating_modal.dart';
 import 'player_page.dart';
 
@@ -313,7 +314,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
         '/error-reports',
         {
           'movieId': widget.movie.id,
-          'episodeId': ?episodeId,
+          'episodeId': episodeId,
           'errorType': errorType,
           'description': cleanDescription,
         },
@@ -328,8 +329,13 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
         .add({
       'movieId': widget.movie.id,
       'movie_id': widget.movie.id,
+      'movieTitle': widget.movie.name,
+      'movie_title': widget.movie.name,
       'userId': user.id,
       'user_id': user.id,
+      'userEmail': user.email,
+      'user_email': user.email,
+      'userName': user.username,
       'episodeId': episodeId,
       'episode_id': episodeId,
       'errorType': errorType,
@@ -551,14 +557,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                   ),
                 ),
                 onPressed: () {
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Đã sao chép liên kết: ${movie.name}',
-                      ),
-                    ),
-                  );
+                  MovieShareHelper.showShareSheet(context, movie);
                 },
               ),
               ListenableBuilder(

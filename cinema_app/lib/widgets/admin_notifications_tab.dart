@@ -3,10 +3,14 @@ import 'package:flutter/material.dart';
 
 import '../core/firebase/collection_names.dart';
 
-/// Giao diện Tab "Quản lý thông báo" dành cho Admin (theo wireframe).
+/// Tab "Quản lý thông báo" dành cho Admin.
 ///
-/// Lấy dữ liệu động 100% từ bảng `notifications` trên Firestore và cho phép
-/// tạo thông báo mới lưu trực tiếp vào bảng `notifications`.
+/// Gồm 2 phân đoạn:
+/// 1. "Gửi thông báo" — tạo + xem thông báo hệ thống gửi tới người dùng
+///    (collection `notifications`).
+/// 2. "Báo lỗi người dùng" — inbox nhận báo lỗi phim từ người dùng
+///    (collection `error_reports`), cho phép đổi trạng thái
+///    pending -> processing -> resolved, ghi chú admin và xoá.
 class AdminNotificationsTab extends StatefulWidget {
   final VoidCallback? onDataChanged;
 
@@ -16,16 +20,30 @@ class AdminNotificationsTab extends StatefulWidget {
   State<AdminNotificationsTab> createState() => _AdminNotificationsTabState();
 }
 
-class _AdminNotificationsTabState extends State<AdminNotificationsTab> {
+class _AdminNotificationsTabState extends State<AdminNotificationsTab>
+    with SingleTickerProviderStateMixin {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  late final TabController _tabController;
 
   bool _isLoading = true;
   List<_AdminNotificationItem> _notifications = [];
 
+  bool _isLoadingReports = true;
+  List<_ErrorReportItem> _reports = [];
+  String _reportFilter = 'all'; // all | pending | processing | resolved
+
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _loadNotifications();
+    _loadErrorReports();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   int _parseInt(dynamic val, [int fallback = 0]) {
@@ -34,6 +52,21 @@ class _AdminNotificationsTabState extends State<AdminNotificationsTab> {
     if (val is String) return int.tryParse(val) ?? fallback;
     return fallback;
   }
+
+  DateTime? _parseDate(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is Timestamp) {
+      try {
+        return raw.toDate();
+      } catch (_) {
+        return null;
+      }
+    }
+    if (raw is DateTime) return raw;
+    return DateTime.tryParse(raw.toString());
+  }
+
+  // ================= THÔNG BÁO HỆ THỐNG =================
 
   Future<void> _loadNotifications() async {
     setState(() => _isLoading = true);
@@ -62,9 +95,7 @@ class _AdminNotificationsTabState extends State<AdminNotificationsTab> {
                 ? rawAudience.trim()
                 : 'Tất cả người dùng';
 
-        final rawDate =
-            (data['createdAt'] ?? data['created_at'] ?? '').toString();
-        final createdAt = DateTime.tryParse(rawDate);
+        final createdAt = _parseDate(data['createdAt'] ?? data['created_at']);
 
         list.add(
           _AdminNotificationItem(
@@ -96,6 +127,288 @@ class _AdminNotificationsTabState extends State<AdminNotificationsTab> {
       debugPrint('AdminNotificationsTab load error: $e');
       if (!mounted) return;
       setState(() => _isLoading = false);
+    }
+  }
+
+  // ================= BÁO LỖI NGƯỜI DÙNG =================
+
+  Future<void> _loadErrorReports() async {
+    setState(() => _isLoadingReports = true);
+    try {
+      final snap = await _firestore
+          .collection(CollectionNames.errorReports)
+          .get();
+      final list = <_ErrorReportItem>[];
+      for (final doc in snap.docs) {
+        list.add(_ErrorReportItem.fromDoc(doc));
+      }
+      list.sort((a, b) {
+        final dA = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final dB = b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return dB.compareTo(dA);
+      });
+      if (!mounted) return;
+      setState(() {
+        _reports = list;
+        _isLoadingReports = false;
+      });
+    } catch (e) {
+      debugPrint('AdminNotificationsTab load reports error: $e');
+      if (!mounted) return;
+      setState(() => _isLoadingReports = false);
+    }
+  }
+
+  Future<void> _refreshAll() async {
+    await Future.wait([_loadNotifications(), _loadErrorReports()]);
+  }
+
+  int get _pendingCount => _reports
+      .where((e) => e.status.toLowerCase() == 'pending')
+      .length;
+
+  List<_ErrorReportItem> get _filteredReports {
+    if (_reportFilter == 'all') return _reports;
+    return _reports
+        .where((e) => e.status.toLowerCase() == _reportFilter)
+        .toList();
+  }
+
+  Future<void> _updateReportStatus(
+    _ErrorReportItem item,
+    String status, {
+    String? adminNote,
+  }) async {
+    try {
+      await _firestore
+          .collection(CollectionNames.errorReports)
+          .doc(item.docId)
+          .update({
+        'status': status,
+        if (adminNote != null) ...{
+          'adminNote': adminNote,
+          'admin_note': adminNote,
+        },
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Đã chuyển báo lỗi sang: ${_statusLabel(status)}'),
+          backgroundColor: Colors.green[700],
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      await _loadErrorReports();
+      widget.onDataChanged?.call();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Cập nhật thất bại: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _showReportActionSheet(_ErrorReportItem item) async {
+    final noteCtrl = TextEditingController(text: item.adminNote ?? '');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: bg,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 12,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 42,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD1D5DB),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  item.movieTitle.isEmpty
+                      ? 'Báo lỗi #${item.docId}'
+                      : item.movieTitle,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Người gửi: ${item.userLabel} · ${_formatDate(item.createdAt)}',
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  item.description.isEmpty
+                      ? '(Không có mô tả)'
+                      : item.description,
+                  style: const TextStyle(fontSize: 13.5, height: 1.45),
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: noteCtrl,
+                  maxLines: 2,
+                  decoration: InputDecoration(
+                    labelText: 'Ghi chú admin (tuỳ chọn)',
+                    isDense: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          Navigator.pop(ctx);
+                          await _updateReportStatus(
+                            item,
+                            'processing',
+                            adminNote: noteCtrl.text.trim().isEmpty
+                                ? null
+                                : noteCtrl.text.trim(),
+                          );
+                        },
+                        icon: const Icon(Icons.autorenew_rounded, size: 18),
+                        label: const Text('Đang xử lý'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF16A34A),
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: () async {
+                          Navigator.pop(ctx);
+                          await _updateReportStatus(
+                            item,
+                            'resolved',
+                            adminNote: noteCtrl.text.trim().isEmpty
+                                ? null
+                                : noteCtrl.text.trim(),
+                          );
+                        },
+                        icon: const Icon(Icons.check_circle_outline, size: 18),
+                        label: const Text('Đã giải quyết'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    onPressed: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (dCtx) => AlertDialog(
+                          title: const Text('Xoá báo lỗi?'),
+                          content: const Text(
+                            'Báo lỗi sẽ bị xoá vĩnh viễn khỏi hệ thống.',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(dCtx, false),
+                              child: const Text('Huỷ'),
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                              ),
+                              onPressed: () => Navigator.pop(dCtx, true),
+                              child: const Text('Xoá'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirm != true) return;
+                      if (ctx.mounted) Navigator.pop(ctx);
+                      try {
+                        await _firestore
+                            .collection(CollectionNames.errorReports)
+                            .doc(item.docId)
+                            .delete();
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Đã xoá báo lỗi.'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                        await _loadErrorReports();
+                        widget.onDataChanged?.call();
+                      } catch (e) {
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Xoá thất bại: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    },
+                    icon: const Icon(
+                      Icons.delete_outline_rounded,
+                      color: Colors.red,
+                    ),
+                    label: const Text(
+                      'Xoá báo lỗi',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    noteCtrl.dispose();
+  }
+
+  String _statusLabel(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return 'Chờ xử lý';
+      case 'processing':
+        return 'Đang xử lý';
+      case 'resolved':
+        return 'Đã giải quyết';
+      default:
+        return status;
     }
   }
 
@@ -430,115 +743,518 @@ class _AdminNotificationsTabState extends State<AdminNotificationsTab> {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
-          // 2. Banner hồng "Gửi thông báo đến người dùng"
-          GestureDetector(
-            onTap: _showCreateNotificationDialog,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color:
-                    isDark ? const Color(0xFF2B191D) : const Color(0xFFFFECEE),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.campaign_outlined,
-                    size: 32,
-                    color: Color(0xFFE11D48),
+          // 2. Tabs: Gửi thông báo | Báo lỗi người dùng (kèm badge pending)
+          Container(
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF1F3F7),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            padding: const EdgeInsets.all(4),
+            child: TabBar(
+              controller: _tabController,
+              indicator: BoxDecoration(
+                color: isDark ? const Color(0xFF2B191D) : Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Gửi thông báo đến người dùng',
+                ],
+              ),
+              indicatorSize: TabBarIndicatorSize.tab,
+              dividerColor: Colors.transparent,
+              labelColor: const Color(0xFFFF3B4E),
+              unselectedLabelColor: textSecondary,
+              labelStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+              tabs: [
+                const Tab(text: 'Gửi thông báo'),
+                Tab(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('Báo lỗi người dùng'),
+                      if (_pendingCount > 0) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 2,
+                          ),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFFF3B4E),
+                            borderRadius: BorderRadius.all(Radius.circular(10)),
+                          ),
+                          child: Text(
+                            _pendingCount > 99 ? '99+' : '$_pendingCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildSendTab(
+                    isDark, cardBg, textPrimary, textSecondary, borderColor),
+                _buildReportsTab(
+                    isDark, cardBg, textPrimary, textSecondary, borderColor),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ================= TAB 1: GỬI THÔNG BÁO =================
+
+  Widget _buildSendTab(
+    bool isDark,
+    Color cardBg,
+    Color textPrimary,
+    Color textSecondary,
+    Color borderColor,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Banner hồng "Gửi thông báo đến người dùng"
+        GestureDetector(
+          onTap: _showCreateNotificationDialog,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color:
+                  isDark ? const Color(0xFF2B191D) : const Color(0xFFFFECEE),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.campaign_outlined,
+                  size: 32,
+                  color: Color(0xFFE11D48),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Gửi thông báo đến người dùng',
+                        style: TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w800,
+                          color: textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        'Thông báo bảo trì, cập nhật phim mới, sự kiện,...',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          color: textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
+
+        Text(
+          'Danh sách thông báo (${_notifications.length})',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            color: textPrimary,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        Expanded(
+          child: _isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    color: Color(0xFFFF3B4E),
+                  ),
+                )
+              : RefreshIndicator(
+                  color: const Color(0xFFFF3B4E),
+                  onRefresh: _loadNotifications,
+                  child: _notifications.isEmpty
+                      ? ListView(
+                          children: [
+                            const SizedBox(height: 50),
+                            Center(
+                              child: Text(
+                                'Chưa có thông báo nào trong hệ thống',
+                                style: TextStyle(
+                                  color: textSecondary,
+                                  fontSize: 13.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : ListView.separated(
+                          physics: const AlwaysScrollableScrollPhysics(
+                            parent: BouncingScrollPhysics(),
+                          ),
+                          padding: const EdgeInsets.only(bottom: 20),
+                          itemCount: _notifications.length,
+                          separatorBuilder: (_, _) =>
+                              const SizedBox(height: 10),
+                          itemBuilder: (context, index) {
+                            return _buildNotificationCard(
+                              item: _notifications[index],
+                              isDark: isDark,
+                              cardBg: cardBg,
+                              textPrimary: textPrimary,
+                              textSecondary: textSecondary,
+                              borderColor: borderColor,
+                            );
+                          },
+                        ),
+                ),
+        ),
+      ],
+    );
+  }
+
+  // ================= TAB 2: BÁO LỖI NGƯỜI DÙNG =================
+
+  Widget _buildReportsTab(
+    bool isDark,
+    Color cardBg,
+    Color textPrimary,
+    Color textSecondary,
+    Color borderColor,
+  ) {
+    final filters = <Map<String, String>>[
+      {'key': 'all', 'label': 'Tất cả'},
+      {'key': 'pending', 'label': 'Chờ xử lý'},
+      {'key': 'processing', 'label': 'Đang xử lý'},
+      {'key': 'resolved', 'label': 'Đã xong'},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1F2A1F) : const Color(0xFFEFFDF3),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.report_problem_outlined,
+                size: 30,
+                color: Color(0xFFF59E0B),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Hộp thư báo lỗi ($_pendingCount chờ xử lý)',
+                      style: TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w800,
+                        color: textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'Bấm vào từng báo lỗi để đổi trạng thái / ghi chú / xoá.',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: filters.map((f) {
+              final selected = _reportFilter == f['key'];
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: ChoiceChip(
+                  label: Text(f['label']!),
+                  selected: selected,
+                  selectedColor: const Color(0xFFFF3B4E),
+                  labelStyle: TextStyle(
+                    color: selected ? Colors.white : textSecondary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12.5,
+                  ),
+                  backgroundColor:
+                      isDark ? const Color(0xFF262626) : Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    side: BorderSide(color: borderColor),
+                  ),
+                  onSelected: (_) {
+                    setState(() => _reportFilter = f['key']!);
+                  },
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Expanded(
+          child: _isLoadingReports
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    color: Color(0xFFFF3B4E),
+                  ),
+                )
+              : RefreshIndicator(
+                  color: const Color(0xFFFF3B4E),
+                  onRefresh: _loadErrorReports,
+                  child: _filteredReports.isEmpty
+                      ? ListView(
+                          children: [
+                            const SizedBox(height: 50),
+                            Center(
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.mark_email_read_outlined,
+                                    size: 44,
+                                    color: textSecondary.withValues(alpha: 0.6),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    'Không có báo lỗi nào',
+                                    style: TextStyle(
+                                      color: textSecondary,
+                                      fontSize: 13.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        )
+                      : ListView.separated(
+                          physics: const AlwaysScrollableScrollPhysics(
+                            parent: BouncingScrollPhysics(),
+                          ),
+                          padding: const EdgeInsets.only(bottom: 20),
+                          itemCount: _filteredReports.length,
+                          separatorBuilder: (_, _) =>
+                              const SizedBox(height: 10),
+                          itemBuilder: (context, index) {
+                            return _buildReportCard(
+                              item: _filteredReports[index],
+                              isDark: isDark,
+                              cardBg: cardBg,
+                              textPrimary: textPrimary,
+                              textSecondary: textSecondary,
+                              borderColor: borderColor,
+                            );
+                          },
+                        ),
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReportCard({
+    required _ErrorReportItem item,
+    required bool isDark,
+    required Color cardBg,
+    required Color textPrimary,
+    required Color textSecondary,
+    required Color borderColor,
+  }) {
+    final status = item.status.toLowerCase();
+    final Color statusColor;
+    final Color statusBg;
+    if (status == 'resolved') {
+      statusColor = const Color(0xFF15803D);
+      statusBg = const Color(0xFFDCFCE7);
+    } else if (status == 'processing') {
+      statusColor = const Color(0xFFB45309);
+      statusBg = const Color(0xFFFEF3C7);
+    } else {
+      statusColor = const Color(0xFFFF3B4E);
+      statusBg = const Color(0xFFFFECEE);
+    }
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () => _showReportActionSheet(item),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: cardBg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor.withValues(alpha: 0.8)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF59E0B).withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.report_problem_outlined,
+                color: Color(0xFFF59E0B),
+                size: 23,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          item.movieTitle.isEmpty
+                              ? 'Phim #${item.movieId}'
+                              : item.movieTitle,
                           style: TextStyle(
                             fontSize: 14.5,
                             fontWeight: FontWeight.w800,
                             color: textPrimary,
                           ),
                         ),
-                        const SizedBox(height: 3),
-                        Text(
-                          'Thông báo bảo trì, cập nhật phim mới, sự kiện,...',
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _formatDate(item.createdAt),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    item.errorTypeLabel,
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFFFF3B4E),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    item.description.isEmpty
+                        ? '(Không có mô tả chi tiết)',
+                        : item.description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: textSecondary,
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Từ: ${item.userLabel}'
+                    '${item.episodeLabel.isNotEmpty ? ' · ${item.episodeLabel}' : ''}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusBg,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Text(
+                          _statusLabel(item.status),
                           style: TextStyle(
-                            fontSize: 12.5,
-                            color: textSecondary,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            color: statusColor,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      Text(
+                        'Bấm để xử lý ›',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: textSecondary,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 18),
-
-          // 3. Tiêu đề "Danh sách thông báo (X)"
-          Text(
-            'Danh sách thông báo (${_notifications.length})',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: textPrimary,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // 4. Danh sách các thẻ thông báo
-          Expanded(
-            child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      color: Color(0xFFFF3B4E),
-                    ),
-                  )
-                : RefreshIndicator(
-                    color: const Color(0xFFFF3B4E),
-                    onRefresh: _loadNotifications,
-                    child: _notifications.isEmpty
-                        ? ListView(
-                            children: [
-                              const SizedBox(height: 50),
-                              Center(
-                                child: Text(
-                                  'Chưa có thông báo nào trong hệ thống',
-                                  style: TextStyle(
-                                    color: textSecondary,
-                                    fontSize: 13.5,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          )
-                        : ListView.separated(
-                            physics: const AlwaysScrollableScrollPhysics(
-                              parent: BouncingScrollPhysics(),
-                            ),
-                            padding: const EdgeInsets.only(bottom: 20),
-                            itemCount: _notifications.length,
-                            separatorBuilder: (_, _) =>
-                                const SizedBox(height: 10),
-                            itemBuilder: (context, index) {
-                              return _buildNotificationCard(
-                                item: _notifications[index],
-                                isDark: isDark,
-                                cardBg: cardBg,
-                                textPrimary: textPrimary,
-                                textSecondary: textSecondary,
-                                borderColor: borderColor,
-                              );
-                            },
-                          ),
-                  ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -568,7 +1284,6 @@ class _AdminNotificationsTabState extends State<AdminNotificationsTab> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icon bên trái trong khung vuông bo góc màu hồng nhạt
           Container(
             width: 44,
             height: 44,
@@ -584,13 +1299,10 @@ class _AdminNotificationsTabState extends State<AdminNotificationsTab> {
             ),
           ),
           const SizedBox(width: 12),
-
-          // Nội dung thông báo
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Hàng trên: Tiêu đề + Ngày gửi
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -616,8 +1328,6 @@ class _AdminNotificationsTabState extends State<AdminNotificationsTab> {
                   ],
                 ),
                 const SizedBox(height: 4),
-
-                // Mô tả / Nội dung thông báo
                 Text(
                   item.content,
                   style: TextStyle(
@@ -627,12 +1337,9 @@ class _AdminNotificationsTabState extends State<AdminNotificationsTab> {
                   ),
                 ),
                 const SizedBox(height: 10),
-
-                // Hàng dưới: Đối tượng nhận + Nhãn "Đã gửi"
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Badge đối tượng nhận
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
@@ -664,16 +1371,15 @@ class _AdminNotificationsTabState extends State<AdminNotificationsTab> {
                         ],
                       ),
                     ),
-
-                    // Badge "Đã gửi"
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 4,
                       ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFDCFCE7),
-                        borderRadius: BorderRadius.circular(14),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFDCFCE7),
+                        borderRadius:
+                            BorderRadius.all(Radius.circular(14)),
                       ),
                       child: const Text(
                         'Đã gửi',
@@ -715,3 +1421,119 @@ class _AdminNotificationItem {
   });
 }
 
+class _ErrorReportItem {
+  final String docId;
+  final int movieId;
+  final String movieTitle;
+  final String userEmail;
+  final String userName;
+  final int? episodeId;
+  final String errorType;
+  final String description;
+  final String status;
+  final String? adminNote;
+  final DateTime? createdAt;
+
+  const _ErrorReportItem({
+    required this.docId,
+    required this.movieId,
+    required this.movieTitle,
+    required this.userEmail,
+    required this.userName,
+    required this.episodeId,
+    required this.errorType,
+    required this.description,
+    required this.status,
+    required this.adminNote,
+    required this.createdAt,
+  });
+
+  static int _parseInt(dynamic v) {
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    if (v is String) return int.tryParse(v) ?? 0;
+    return 0;
+  }
+
+  static DateTime? _parseDate(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is Timestamp) {
+      try {
+        return raw.toDate();
+      } catch (_) {
+        return null;
+      }
+    }
+    if (raw is DateTime) return raw;
+    return DateTime.tryParse(raw.toString());
+  }
+
+  factory _ErrorReportItem.fromDoc(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final data = doc.data() ?? {};
+    final movieTitle = (data['movieTitle'] ??
+            data['movie_title'] ??
+            data['movieName'] ??
+            '')
+        .toString();
+    final userEmail =
+        (data['userEmail'] ?? data['user_email'] ?? '').toString();
+    final userName = (data['userName'] ??
+            data['user_name'] ??
+            data['username'] ??
+            '')
+        .toString();
+    int? ep;
+    final rawEp = data['episodeId'] ?? data['episode_id'];
+    if (rawEp is int) {
+      ep = rawEp;
+    } else if (rawEp is num) {
+      ep = rawEp.toInt();
+    }
+    final currentEp = _parseInt(data['currentEpisode']);
+    return _ErrorReportItem(
+      docId: doc.id,
+      movieId: _parseInt(data['movieId'] ?? data['movie_id']),
+      movieTitle: movieTitle,
+      userEmail: userEmail,
+      userName: userName,
+      episodeId: ep ?? (currentEp == 0 ? null : currentEp),
+      errorType:
+          (data['errorType'] ?? data['error_type'] ?? '').toString(),
+      description: (data['description'] ?? '').toString(),
+      status: (data['status'] ?? 'pending').toString(),
+      adminNote: (data['adminNote'] ?? data['admin_note'])?.toString(),
+      createdAt: _parseDate(data['createdAt'] ?? data['created_at']),
+    );
+  }
+
+  String get errorTypeLabel {
+    switch (errorType) {
+      case 'video_not_load':
+        return 'Video không tải được';
+      case 'wrong_episode':
+        return 'Sai nội dung / sai tập phim';
+      case 'no_sound':
+        return 'Không có tiếng';
+      case 'lag':
+        return 'Giật / lag';
+      default:
+        return errorType.isEmpty ? 'Báo lỗi phim' : errorType;
+    }
+  }
+
+  String get userLabel {
+    if (userName.isNotEmpty && userEmail.isNotEmpty) {
+      return '$userName ($userEmail)';
+    }
+    if (userEmail.isNotEmpty) return userEmail;
+    if (userName.isNotEmpty) return userName;
+    return 'Người dùng';
+  }
+
+  String get episodeLabel {
+    if (episodeId == null) return '';
+    return 'Tập $episodeId';
+  }
+}
