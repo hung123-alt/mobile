@@ -2,11 +2,6 @@
 import 'base_entity.dart';
 
 /// Model quốc gia - kế thừa BaseEntity<int>
-///
-/// Khớp với server/src/modules/countries/countries.entity.ts
-///
-/// Parse mềm giống Genre: dữ liệu migrate MySQL cũ có thể lẫn kiểu
-/// int/String ở field id, nên không dùng `as int?` trực tiếp.
 class Country extends BaseEntity<int> {
   final String slug;
   final bool isVisible;

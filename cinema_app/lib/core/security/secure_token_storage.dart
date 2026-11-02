@@ -11,14 +11,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// - Token/refresh_token/secret -> luu o Keychain (iOS) /
 ///   EncryptedSharedPreferences (Android) qua `flutter_secure_storage`.
 /// - Cai khong nhay cam (theme_mode) -> giu o SharedPreferences cho nhe.
-///
-/// QUY TAC:
-/// - KHONG luu token vao bien static toan cuc (tien trinh bi dump la lo).
-/// - Moi doc/ghi deu qua class nay (Future), loi I/O bat o ranh gioi.
+
 class SecureTokenStorage {
   SecureTokenStorage._();
 
-  // Keychain (iOS) + EncryptedSharedPreferences (Android).
   static const FlutterSecureStorage _secure = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
     iOptions: IOSOptions(

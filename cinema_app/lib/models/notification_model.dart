@@ -1,7 +1,4 @@
 import 'id_entity.dart';
-
-/// Model thông báo. Khớp bảng `notifications`:
-/// id, userId, type, title, content, linkUrl, isRead, createdAt.
 class AppNotification extends IdEntity<int> {
   final int userId;
   final String type;

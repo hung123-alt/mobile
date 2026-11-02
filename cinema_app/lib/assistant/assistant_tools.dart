@@ -322,7 +322,7 @@ class AssistantTools {
     if (!ctx.mounted) return ToolOutcome({'error': 'Màn hình đã đóng.'});
     // Mở trực tiếp MovieDetailPage (route /movie/:slug không có trong AppRouter).
     Navigator.push(
-      // ignore: use_build_context_synchronously
+    
       ctx,
       MaterialPageRoute(builder: (_) => MovieDetailPage(movie: movie)),
     );

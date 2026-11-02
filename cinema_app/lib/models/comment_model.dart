@@ -1,9 +1,6 @@
 import 'id_entity.dart';
 
 /// Model bình luận - kế thừa `IdEntity<int>`.
-///
-/// Hỗ trợ cả dữ liệu migrate từ MySQL (`user_id`, `movie_id`, `parent_id`, `created_at`)
-/// và dữ liệu mới trên Firestore (`userId`, `movieId`, `parentId`, `likeCount`, `dislikeCount`...).
 class Comment extends IdEntity<int> {
   final String? docId;
   final int userId;

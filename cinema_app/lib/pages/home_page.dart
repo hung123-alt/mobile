@@ -10,15 +10,7 @@ import '../widgets/movie_row_section.dart';
 import 'search_page.dart';
 
 /// Trang chủ PhimHay24h — bản dựng lại.
-///
-/// FIX RỚT PHIM:
-/// Trước đây đọc `movies` rồi dùng `movie.genres` nhúng sẵn (thường rỗng vì
-/// data migrate MySQL cũ chỉ lưu ở `movie_genres`), nên thể loại nào cũng ít.
-/// Giờ dùng [FirestoreMovieService.fetchEnrichedMovies] đọc gộp 5 collections
-/// nên admin báo 71 phim thì app hiện đủ 71 phim.
-///
-/// UI MỚI:
-/// Hero Banner carousel + các dải phim theo chủ đề + lưới Mới cập nhật.
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 

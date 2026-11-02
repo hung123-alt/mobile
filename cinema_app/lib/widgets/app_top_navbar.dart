@@ -10,10 +10,6 @@ import 'navigation_shell.dart';
 /// Thanh Navbar trên cùng dùng chung toàn ứng dụng (HomePage, SearchPage, CategoryPage, FavoritePage, ProfilePage...).
 ///
 /// Hỗ trợ đặt trực tiếp trong `Column` hoặc gán vào `Scaffold.appBar` nhờ [PreferredSizeWidget].
-/// - Logo `PhimHay24h` nằm chính giữa, chữ "24h" phủ gradient đỏ-cam.
-/// - Không có Hamburger icon bên trái (chỉ hiện nút Back nếu trang được push lên và [showBackIfCanPop] = true, hoặc truyền [leading] tuỳ chỉnh).
-/// - Bấm vào logo mặc định sẽ quay về tab Trang chủ.
-/// - Bên phải gồm icon Chuông thông báo (nhận thông báo thời gian thực từ Firestore) và nút chuyển đổi Sáng / Tối.
 class AppTopNavbar extends StatelessWidget implements PreferredSizeWidget {
   final bool showBackIfCanPop;
   final VoidCallback? onLogoTap;

@@ -5,30 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import '../../firebase_options.dart';
 import 'collection_names.dart';
 
-/// Quản lý ánh xạ giữa Firebase Auth `uid` và hồ sơ Firestore.
-// ignore_for_file: unintended_html_in_doc_comment
-/// VÌ SAO CẦN FILE NÀY?
-///
-/// Firestore Security Rules KHÔNG query được theo field. Rules chỉ biết
-/// `request.auth.uid` (một chuỗi Firebase Auth uid). Nhưng collection
-/// `users` của app lại dùng docId là SỐ NGUYÊN tăng dần (VD "12"), và
-/// field `userId` trong bình luận cũng là số đó — không phải uid.
-///
-/// Vậy nên rules không thể biết "doc này thuộc về user nào" nếu chỉ có uid.
-/// Giải pháp: collection `user_auth_map`, docId = PROFILE ID (số, dạng
-/// chuỗi, VD "12"), chứa:
-///   { uid: "<firebase-auth-uid>", email: "...", role: "user"|"admin" }
-///
-/// Rules kiểm tra quyền sở hữu bằng cách đọc TRỰC TIẾP doc map theo id:
-/// `get(/.../user_auth_map/12).data.uid == request.auth.uid`.
-/// Vì docId Firestore là duy nhất, mỗi hồ sơ chỉ có đúng 1 doc map nên
-/// không ai chiếm được hồ sơ của người khác.
-///
-/// AN TOÀN:
-///   - Doc này KHÔNG chứa mật khẩu (Firebase Auth tự hash+salt).
-///   - User tự ghi được doc của mình, nhưng KHÔNG tự khai
-///     `role == 'admin'` — quyền admin nằm ở collection `admins`,
-///     chỉ Admin SDK / Firestore Console mới ghi được.
+
 class UserAuthMapService {
   UserAuthMapService._();
 

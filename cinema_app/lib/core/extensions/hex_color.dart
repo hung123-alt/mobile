@@ -2,11 +2,7 @@ import 'package:flutter/material.dart';
 
 /// Extension để đổi chuỗi hex thành màu Color.
 ///
-/// Cùng kiểu với ví dụ `extension Hexcolor on Color` trong tài liệu
-/// MobileDev (Đánh giá ứng dụng đầu tiên).
-///
-/// Dùng:
-///   Container(color: '#E50914'.toColor())
+
 extension HexColor on String {
   /// Chuyển "#RRGGBB" hoặc "RRGGBB" thành Color
   Color toColor() {

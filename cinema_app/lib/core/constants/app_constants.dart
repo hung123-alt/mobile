@@ -1,13 +1,9 @@
-/// Hằng số toàn app.
-// ignore_for_file: unintended_html_in_doc_comment
+
 class AppConstants {
   AppConstants._();
 
   // ===== API =====
-  /// Base URL của Backend REST API (team backend viết bằng NestJS/TypeScript).
-  /// Mobile Dart KHÔNG chạy NestJS — chỉ gọi HTTP qua `http` package.
-  /// - Android emulator: dùng 10.0.2.2 thay vì localhost
-  /// - Web / iOS simulator: dùng localhost
+  /// Base URL của Backend REST API 
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: 'http://localhost:3000/api',
@@ -30,18 +26,12 @@ class AppConstants {
   static const String keyUser = 'user_json';
 
   // ===== Quên mật khẩu - Deep Link (Phương án 1) =====
-  /// Custom scheme để app bắt link reset sau khi Firebase redirect.
-  /// Phải khớp với <intent-filter> trong AndroidManifest và CFBundleURLTypes
-  /// trong Info.plist. Mobile KHÔNG dùng cookie nên không cần lo CSRF như web.
+ 
   static const String resetScheme = 'cinemahay24h';
   static const String resetHost = 'reset-password';
   static const String androidPackageName = 'com.example.cinema_app';
   static const String iosBundleId = 'com.example.cinemaApp';
 
-  /// Continue URL kèm trong ActionCodeSettings khi gửi email reset.
-  /// PHẢI là `https` và nằm trong Authorized domains của Firebase
-  /// (domain *.firebaseapp.com có sẵn) — custom-scheme sẽ bị từ chối
-  /// với lỗi "Domain not whitelisted by project".
   static const String resetContinueUrl =
       'https://cinema-app-b760e.firebaseapp.com/reset-password';
 }

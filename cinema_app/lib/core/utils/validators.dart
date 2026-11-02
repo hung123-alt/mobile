@@ -1,8 +1,5 @@
 /// Hàm kiểm tra dữ liệu đầu vào của form.
-///
-/// Theo yêu cầu tuần 8: "Tách phần kiểm tra dữ liệu ra thành một
-/// phương thức riêng. Sau đó gọi thực hiện phương thức mỗi khi
-/// Submit Form (xem sự kiện onSubmitted)."
+///  "Tách phần kiểm tra dữ liệu ra thành một"
 class Validators {
   Validators._();
 

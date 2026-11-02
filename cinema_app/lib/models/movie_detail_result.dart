@@ -4,7 +4,6 @@ import 'movie_model.dart';
 
 /// Kết quả chi tiết phim: phim + danh sách tập + thể loại + phim liên quan.
 ///
-/// Khớp với GET /movies/detail/:slug từ NestJS backend.
 class MovieDetailResult {
   final Movie movie;
   final List<Episode> episodes;

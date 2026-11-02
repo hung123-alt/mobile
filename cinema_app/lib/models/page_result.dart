@@ -1,15 +1,4 @@
-// ignore_for_file: unintended_html_in_doc_comment
-/// Kết quả phân trang - dùng Generic 1 tham số.
-///
-/// Server NestJS trả về dạng:
-///   { items: [...], total: 90, page: 1, limit: 12 }
-///
-/// Dùng cho mọi danh sách có phân trang (danh sách phim, bình luận...):
-///   final result = await PageResult<Movie>.fromJson(
-///     json,
-///     (e) => Movie.fromJson(e),
-///   );
-///   result.getTotalPages();
+
 class PageResult<T> {
   final List<T> items;
   final int total;
