@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../pages/account_info_page.dart';
 import '../pages/admin_dashboard_page.dart';
 import '../pages/category_page.dart';
+import '../pages/cinematic_intro_page.dart';
 import '../pages/favorite_page.dart';
 import '../pages/forbidden_page.dart';
 import '../pages/forgot_password_page.dart';
@@ -27,6 +28,9 @@ class AppRouter {
 
         // Đăng ký
         AppRoutes.register: (context) => const RegisterPage(),
+
+        // Intro điện ảnh sau đăng nhập / đăng ký (bỏ qua được)
+        AppRoutes.intro: (context) => const CinematicIntroPage(),
 
         // Quên mật khẩu
         AppRoutes.forgotPassword: (context) {

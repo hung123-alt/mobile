@@ -88,7 +88,7 @@ class _LoginPageState extends State<LoginPage> {
       if (_auth.currentUser?.getIsAdmin() == true) {
         await _showAdminDestinationDialog();
       } else {
-        Navigator.pushReplacementNamed(context, AppRoutes.home);
+        Navigator.pushReplacementNamed(context, AppRoutes.intro);
       }
     } else {
       final msg = _auth.errorMessage ?? 'Đăng nhập thất bại. Vui lòng thử lại!';
@@ -130,6 +130,7 @@ class _LoginPageState extends State<LoginPage> {
           await AssistantManager.instance.setEnabled(_assistantEnabled);
         }
       } catch (_) {}
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Đăng ký thành công! Chào mừng ${_auth.currentUser?.getDisplayName()}'),
@@ -137,7 +138,8 @@ class _LoginPageState extends State<LoginPage> {
           behavior: SnackBarBehavior.floating,
         ),
       );
-      Navigator.pushReplacementNamed(context, AppRoutes.home);
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, AppRoutes.intro);
     } else {
       final msg = _auth.errorMessage ?? 'Đăng ký thất bại. Vui lòng thử lại!';
       ScaffoldMessenger.of(context).showSnackBar(
