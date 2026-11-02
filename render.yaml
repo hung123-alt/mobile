@@ -1,0 +1,22 @@
+# ============================================================
+#  Render Blueprint — PhimHay24h (Flutter Web / PWA)
+#
+#  Render đọc file này ở GỐC repo.
+#  Deploy: Render Dashboard → New → Blueprint → chọn repo này
+#  (hoặc New → Web Service → Runtime: Docker → branch: feature/demo-render)
+#
+#  App đọc dữ liệu từ Firebase (Firestore + Auth) nên KHÔNG cần
+#  biến môi trường nào cho backend.
+# ============================================================
+
+services:
+  - type: web
+    name: phimhay24h
+    runtime: docker
+    dockerfilePath: ./cinema_app/Dockerfile
+    dockerContext: ./cinema_app
+    branch: feature/demo-render
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /index.html
+    # Docker image đã cấu hình EXPOSE 80 và serve file tĩnh bằng nginx

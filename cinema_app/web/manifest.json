@@ -1,11 +1,11 @@
 {
-    "name": "cinema_app",
-    "short_name": "cinema_app",
+    "name": "PhimHay24h",
+    "short_name": "PhimHay24h",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#E04656",
+    "theme_color": "#E04656",
+    "description": "PhimHay24h — Xem phim trực tuyến. Phim bộ, phim lẻ, hoạt hình và anime cập nhật mỗi ngày.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

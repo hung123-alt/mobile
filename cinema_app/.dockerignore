@@ -1,0 +1,27 @@
+# Giảm context Docker build — bỏ thư mục sinh ra khi build local
+build/
+.dart_tool/
+.pub-cache/
+.pub/
+.git/
+.gitignore
+
+# Flutter/Dart
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+*.iml
+
+# IDE
+.idea/
+.vscode/
+
+# Desktop build artifacts
+linux/flutter/ephemeral/
+macos/Flutter/ephemeral/
+windows/flutter/ephemeral/
+
+# Docs & scripts không cần khi build web
+tool/
+test/
