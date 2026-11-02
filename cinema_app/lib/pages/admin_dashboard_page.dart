@@ -7,6 +7,8 @@ import '../core/firebase/collection_names.dart';
 import '../models/user_model.dart';
 import '../routes/app_routes.dart';
 import '../widgets/admin_bottom_bar.dart';
+import '../widgets/admin_comments_tab.dart';
+import '../widgets/admin_genres_tab.dart';
 import '../widgets/admin_movies_tab.dart';
 import '../widgets/admin_notifications_tab.dart';
 import '../widgets/admin_top_navbar.dart';
@@ -393,6 +395,16 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   }
                   if (tabIndex == 2) {
                     return AdminUsersTab(
+                      onDataChanged: _loadDashboardData,
+                    );
+                  }
+                  if (tabIndex == 3) {
+                    return AdminCommentsTab(
+                      onDataChanged: _loadDashboardData,
+                    );
+                  }
+                  if (tabIndex == 4) {
+                    return AdminGenresTab(
                       onDataChanged: _loadDashboardData,
                     );
                   }
