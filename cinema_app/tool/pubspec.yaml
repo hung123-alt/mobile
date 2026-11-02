@@ -1,0 +1,17 @@
+name: cinema_seed_tool
+description: "Tool seed phim tu VSMOV API vao Firestore cho app cinema_app (mobile)."
+
+# Package Dart thuan (khong phai Flutter) de chay bang `dart run`.
+# Khong can cai Node.js.
+publish_to: "none"
+version: 1.0.0
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  # Firestore REST API (Google APIs) - ho tro service account, chay duoc
+  # tren may khong co Flutter SDK.
+  googleapis: ^14.0.0
+  # ClientBuilder: lay access token tu service account key JSON.
+  googleapis_auth: ^1.4.1

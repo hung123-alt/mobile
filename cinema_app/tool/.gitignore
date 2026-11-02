@@ -3,6 +3,6 @@ serviceAccountKey.json
 *-key.json
 service-account*.json
 
-# Script seed: cài đặt node_modules riêng
-node_modules/
-package-lock.json
+# Script seed Dart: cài đặt package riêng
+.dart_tool/
+pubspec.lock
