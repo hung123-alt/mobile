@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../assistant/assistant_manager.dart';
+import '../assistant/assistant_persona.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
 import '../routes/app_routes.dart';
@@ -160,6 +162,143 @@ class ProfilePage extends StatelessWidget {
                                 title: 'Phim yêu thích',
                                 onTap: () {
                                   Navigator.pushNamed(context, AppRoutes.favorite);
+                                },
+                              ),
+                              const Divider(height: 1, indent: 52),
+                              // Trợ lý Lina/Seven: bật/tắt + chọn persona
+                              ListenableBuilder(
+                                listenable: AssistantManager.instance,
+                                builder: (context, _) {
+                                  final mgr = AssistantManager.instance;
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 8),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Container(
+                                              width: 34,
+                                              height: 34,
+                                              decoration: BoxDecoration(
+                                                gradient:
+                                                    LinearGradient(colors: [
+                                                  mgr.brain.persona
+                                                      .primaryColor,
+                                                  mgr.brain.persona
+                                                      .secondaryColor,
+                                                ]),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              alignment: Alignment.center,
+                                              child: Text(
+                                                mgr.brain.persona.displayName
+                                                    .substring(0, 1),
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight:
+                                                      FontWeight.w900,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            const Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    'Trợ lý giọng nói',
+                                                    style: TextStyle(
+                                                        fontSize: 14,
+                                                        fontWeight:
+                                                            FontWeight.w500),
+                                                  ),
+                                                  Text(
+                                                    'Lina · Seven',
+                                                    style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: Color(
+                                                            0xFF6B7280)),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Switch(
+                                              value: mgr.enabled,
+                                              activeThumbColor:
+                                                  const Color(0xFFFF4B5C),
+                                              activeTrackColor:
+                                                  const Color(0xFFFF4B5C)
+                                                      .withValues(alpha: 0.4),
+                                              onChanged: (v) =>
+                                                  mgr.setEnabled(v),
+                                            ),
+                                          ],
+                                        ),
+                                        if (mgr.enabled) ...[
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            children:
+                                                AssistantPersona.values.map((p) {
+                                              final sel =
+                                                  mgr.brain.persona == p;
+                                              return Expanded(
+                                                child: GestureDetector(
+                                                  onTap: () =>
+                                                      mgr.setPersona(p),
+                                                  child: Container(
+                                                    margin: const EdgeInsets
+                                                        .only(right: 8),
+                                                    padding:
+                                                        const EdgeInsets
+                                                            .symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 8,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      gradient: sel
+                                                          ? LinearGradient(
+                                                              colors: [
+                                                                p.primaryColor,
+                                                                p.secondaryColor,
+                                                              ],
+                                                            )
+                                                          : null,
+                                                      color: sel
+                                                          ? null
+                                                          : (isDark
+                                                              ? const Color(
+                                                                  0xFF262626)
+                                                              : const Color(
+                                                                  0xFFF3F4F6)),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              10),
+                                                    ),
+                                                    alignment: Alignment.center,
+                                                    child: Text(
+                                                      p.displayName,
+                                                      style: TextStyle(
+                                                        fontSize: 13,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: sel
+                                                            ? Colors.white
+                                                            : null,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+                                            }).toList(),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  );
                                 },
                               ),
                               const Divider(height: 1, indent: 52),

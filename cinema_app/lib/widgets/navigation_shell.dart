@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../assistant/assistant_manager.dart';
+import '../assistant/assistant_orb.dart';
+import '../assistant/assistant_panel.dart';
 import '../pages/category_page.dart';
 import '../pages/favorite_page.dart';
 import '../pages/home_page.dart';
@@ -36,6 +39,9 @@ class NavigationShell extends StatefulWidget {
 
 class _NavigationShellState extends State<NavigationShell> {
   late int _currentIndexSelected;
+  double _orbX = 0;
+  double _orbY = 0;
+  bool _orbInit = false;
 
   @override
   void initState() {
@@ -43,6 +49,11 @@ class _NavigationShellState extends State<NavigationShell> {
     _currentIndexSelected = widget.initialTab;
     NavigationShell.tabIndexNotifier.value = _currentIndexSelected;
     NavigationShell.tabIndexNotifier.addListener(_handleExternalTabChange);
+    // Nạp cài đặt Lina/Seven của user hiện tại (bật/tắt + persona).
+    AssistantManager.instance.loadForCurrentUser();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AssistantManager.instance.brain.attachContext(context);
+    });
   }
 
   @override
@@ -78,9 +89,47 @@ class _NavigationShellState extends State<NavigationShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndexSelected,
-        children: _tabs,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          if (!_orbInit) {
+            _orbInit = true;
+            _orbX = constraints.maxWidth - 92;
+            _orbY = constraints.maxHeight - 190;
+          }
+          return Stack(
+            children: [
+              IndexedStack(
+                index: _currentIndexSelected,
+                children: _tabs,
+              ),
+              // Orb Lina/Seven nổi ở góc, kéo thả được, bấm để mở panel chat.
+              Positioned(
+                left: _orbX.clamp(0, constraints.maxWidth - 84),
+                top: _orbY.clamp(0, constraints.maxHeight - 100),
+                child: Draggable(
+                  feedback: AssistantOrb(
+                    onTap: () {},
+                  ),
+                  childWhenDragging: const SizedBox(width: 76, height: 76),
+                  onDragEnd: (details) {
+                    setState(() {
+                      _orbX = (details.offset.dx - 0)
+                          .clamp(0, constraints.maxWidth - 84);
+                      _orbY = (details.offset.dy - 90)
+                          .clamp(0, constraints.maxHeight - 100);
+                    });
+                  },
+                  child: AssistantOrb(
+                    onTap: () {
+                      AssistantManager.instance.brain.attachContext(context);
+                      AssistantPanel.show(context);
+                    },
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
       bottomNavigationBar: AppBottomBar(
         currentIndex: _currentIndexSelected,

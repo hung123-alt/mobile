@@ -4,6 +4,10 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Cho phép Lina/Seven nghe giọng nói của bạn để tìm phim và điều khiển app.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Nhận dạng giọng nói tiếng Việt để trò chuyện với trợ lý phim.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

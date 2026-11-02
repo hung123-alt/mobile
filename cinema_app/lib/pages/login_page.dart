@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../assistant/assistant_manager.dart';
+import '../assistant/assistant_persona.dart';
+import '../assistant/assistant_settings.dart';
 import '../core/utils/validators.dart';
 import '../providers/auth_provider.dart';
 import '../routes/app_routes.dart';
@@ -38,6 +41,10 @@ class _LoginPageState extends State<LoginPage> {
   bool _isPasswordLoginVisible = false;
   bool _isPasswordRegisterVisible = false;
   bool _isLoading = false;
+
+  // Trợ lý Lina/Seven: opt-in ngay khi đăng ký
+  bool _assistantEnabled = true;
+  AssistantPersona _assistantPersona = AssistantPersona.lina;
 
   final AuthProvider _auth = AuthProvider.instance;
 
@@ -110,6 +117,19 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isLoading = false);
 
     if (success) {
+      // Lưu lựa chọn trợ lý Lina/Seven vào users/{uid}.
+      try {
+        final user = _auth.currentUser;
+        if (user != null) {
+          await AssistantSettings.save(
+            uid: user.id.toString(),
+            enabled: _assistantEnabled,
+            persona: _assistantPersona,
+          );
+          AssistantManager.instance.brain.setPersona(_assistantPersona);
+          await AssistantManager.instance.setEnabled(_assistantEnabled);
+        }
+      } catch (_) {}
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Đăng ký thành công! Chào mừng ${_auth.currentUser?.getDisplayName()}'),
@@ -562,10 +582,142 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
           const SizedBox(height: 22),
+          _buildAssistantOptIn(),
+          const SizedBox(height: 22),
           _buildPrimaryButton(
             text: 'Đăng Ký',
             onPressed: _isLoading ? null : _handleRegister,
           ),
+        ],
+      ),
+    );
+  }
+
+  /// Opt-in trợ lý Lina/Seven ngay khi đăng ký.
+  /// Bật/tắt + chọn 1 trong 2 persona, lưu vào users/{uid}.
+  Widget _buildAssistantOptIn() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFFFF6FA5), Color(0xFF7C6CFF)],
+                  ),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: const Text(
+                  'L',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 17,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Trợ lý giọng nói',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1F2937),
+                      ),
+                    ),
+                    Text(
+                      'Tìm phim, mở phim, phát tập bằng giọng nói',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF6B7280),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Switch(
+                value: _assistantEnabled,
+                activeThumbColor: const Color(0xFFFF5722),
+                onChanged: (v) => setState(() => _assistantEnabled = v),
+              ),
+            ],
+          ),
+          if (_assistantEnabled) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: AssistantPersona.values.map((p) {
+                final selected = _assistantPersona == p;
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _assistantPersona = p),
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: selected
+                            ? LinearGradient(colors: [
+                                p.primaryColor,
+                                p.secondaryColor,
+                              ])
+                            : null,
+                        color:
+                            selected ? null : const Color(0xFFF3F4F6),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: selected
+                              ? Colors.transparent
+                              : const Color(0xFFE5E7EB),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            p.displayName,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: selected
+                                  ? Colors.white
+                                  : const Color(0xFF1F2937),
+                            ),
+                          ),
+                          Text(
+                            p == AssistantPersona.lina
+                                ? 'Dịu dàng · nữ'
+                                : 'Điềm tĩnh · nam',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              color: selected
+                                  ? Colors.white70
+                                  : const Color(0xFF6B7280),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
         ],
       ),
     );

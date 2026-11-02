@@ -1199,7 +1199,7 @@ class _AdminNotificationsTabState extends State<AdminNotificationsTab>
                   const SizedBox(height: 4),
                   Text(
                     item.description.isEmpty
-                      ? '(Không có mô tả chi tiết)'
+                        ? '(Không có mô tả chi tiết)',
                         : item.description,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,

@@ -48,6 +48,10 @@ dependencies:
   # firebase_core: khởi tạo Firebase, bắt buộc phải có
   firebase_core: ^3.8.0
 
+  # ===== Trợ lý giọng nói Lina/Seven =====
+  speech_to_text: ^7.0.0
+  flutter_tts: ^4.2.2
+
   # cloud_firestore: đọc/ghi dữ liệu NoSQL
   cloud_firestore: ^5.4.4
 
