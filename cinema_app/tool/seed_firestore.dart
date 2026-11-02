@@ -99,6 +99,8 @@ Future<void> main(List<String> args) async {
   var insertedMovies = 0;
   var insertedEpisodes = 0;
   var skipped = 0;
+  var failedDetail = 0;
+  final skippedSlugs = <String>[];
 
   print('\n🔄 Lấy chi tiết & đổ dữ liệu...');
 
@@ -113,12 +115,14 @@ Future<void> main(List<String> args) async {
     // Phim đã tồn tại → skip toàn bộ, giữ nguyên data cũ + Server 2 thêm tay.
     if (await store.movieExists(slug)) {
       skipped++;
+      if (skippedSlugs.length < 15) skippedSlugs.add(slug);
       continue;
     }
 
     final detailResponse = await fetchMovieDetail(slug);
     final movie = detailResponse?['movie'];
     if (movie is! Map<String, dynamic>) {
+      failedDetail++;
       skipped++;
       continue;
     }
@@ -281,10 +285,24 @@ Future<void> main(List<String> args) async {
   print('\n═══════════════════════════════════════');
   print('  KẾT QUẢ SEED FIRESTORE');
   print('═══════════════════════════════════════');
+  print('   📥 Phim lấy từ VSMOV: ${list.length}');
   print('   ✅ Phim mới:  $insertedMovies');
   print('   ✅ Tập phim:  $insertedEpisodes');
-  print('   ⏭️  Bỏ qua:   $skipped (slug đã có — giữ nguyên data cũ)');
+  print('   ⏭️  Bỏ qua:   $skipped');
+  if (failedDetail > 0) {
+    print('      └─ trong đó $failedDetail phim lỗi khi lấy chi tiết');
+  }
+  if (skippedSlugs.isNotEmpty) {
+    print('   📋 Slug đã có sẵn (mẫu):');
+    for (final s in skippedSlugs) {
+      print('      • $s');
+    }
+  }
   print('═══════════════════════════════════════');
+  if (insertedMovies == 0 && list.isNotEmpty) {
+    print('  ⚠️  Không có phim nào mới. Kiểm tra xem tất cả slug đã tồn tại');
+    print('      trong Firestore chưa — nếu vậy, tăng SEED_PAGES để lấy phim mới hơn.');
+  }
   print('  💡 Muốn seed lại 1 phim → xóa doc phim đó trong Firestore rồi chạy lại.');
   print('═══════════════════════════════════════\n');
 
@@ -457,8 +475,12 @@ class _FirestoreAccess {
     if (res.statusCode >= 300) return false;
     final decoded = jsonDecode(res.body);
     if (decoded is! List) return false;
-    // runQuery trả về [] nếu không có doc khớp.
-    return decoded.isNotEmpty;
+    // ⚠️  QUAN TRỌNG: runQuery luôn trả về ít nhất 1 phần tử kiểu
+    // `{"readTime": "..."}` — kể cả khi KHÔNG có doc nào khớp.
+    // Nên phải lọc theo field `document`, đừng đếm phần tử mảng.
+    return decoded.any(
+      (row) => row is Map && row['document'] != null,
+    );
   }
 
   /// Lấy giá trị int lớn nhất của 1 field trong collection (làm id kế tiếp).
@@ -483,12 +505,17 @@ class _FirestoreAccess {
     );
     if (res.statusCode >= 300) return 0;
     final decoded = jsonDecode(res.body);
-    if (decoded is! List || decoded.isEmpty) return 0;
-    final doc = decoded.first;
-    final fields = (doc is Map ? doc['document'] : null) is Map
-        ? (doc['document']['fields'] as Map)
-        : null;
-    if (fields == null) return 0;
+    if (decoded is! List) return 0;
+    // ⚠️  runQuery luôn trả về phần tử `{"readTime": ...}` nếu rỗng,
+    // nên phải lọc theo `document` thay vì lấy `first` mù.
+    final row = decoded.cast<Map>().firstWhere(
+          (r) => r['document'] != null,
+          orElse: () => const <String, dynamic>{},
+        );
+    final document = row['document'];
+    if (document is! Map) return 0;
+    final fields = document['fields'];
+    if (fields is! Map) return 0;
     final raw = fields[field];
     if (raw is! Map) return 0;
     return int.tryParse('${raw['integerValue'] ?? raw['doubleValue'] ?? 0}') ?? 0;
