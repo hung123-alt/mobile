@@ -1,3 +1,4 @@
+// ignore_for_file: unintended_html_in_doc_comment
 /// Kết quả phân trang - dùng Generic 1 tham số.
 ///
 /// Server NestJS trả về dạng:

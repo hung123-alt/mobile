@@ -1,3 +1,4 @@
+// ignore_for_file: unintended_html_in_doc_comment
 import 'base_entity.dart';
 
 /// Model thể loại phim - kế thừa BaseEntity<int>
@@ -10,14 +11,14 @@ class Genre extends BaseEntity<int> {
   final DateTime? updatedAt;
 
   Genre({
-    required int id,
-    required String name,
-    required String description,
+    required super.id,
+    required super.name,
+    required super.description,
     required this.slug,
     required this.isVisible,
     required this.createdAt,
     required this.updatedAt,
-  }) : super(id: id, name: name, description: description);
+  });
 
   /// Parse mềm từ Firestore/MySQL cũ: id/slug/is_visible có thể lẫn
   /// kiểu int-String-bool. Dùng helper thay vì `as int?` để tránh throw

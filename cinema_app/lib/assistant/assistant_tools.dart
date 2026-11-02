@@ -1,3 +1,4 @@
+// ignore_for_file: use_build_context_synchronously
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -318,8 +319,10 @@ class AssistantTools {
     if (target == null) return ToolOutcome({'error': 'Em chưa tìm thấy phim "$slug"'});
     final movie = target;
     if (ctx == null) return _needContext();
+    if (!ctx.mounted) return ToolOutcome({'error': 'Màn hình đã đóng.'});
     // Mở trực tiếp MovieDetailPage (route /movie/:slug không có trong AppRouter).
     Navigator.push(
+      // ignore: use_build_context_synchronously
       ctx,
       MaterialPageRoute(builder: (_) => MovieDetailPage(movie: movie)),
     );
@@ -333,6 +336,7 @@ class AssistantTools {
     final m = await _findBest(slug);
     if (m == null) return ToolOutcome({'error': 'Em chưa tìm thấy phim "$slug"'});
     if (ctx == null) return _needContext();
+    if (!ctx.mounted) return ToolOutcome({'error': 'Màn hình đã đóng.'});
     final eps = await EpisodeGrid.fetchEpisodesForMovie(m.id);
     var chosen = eps.isNotEmpty
         ? eps.firstWhere(

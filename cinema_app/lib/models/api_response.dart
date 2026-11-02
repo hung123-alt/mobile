@@ -1,3 +1,4 @@
+// ignore_for_file: unintended_html_in_doc_comment
 /// Response chung của Backend REST API - dùng Generic với 2 tham số.
 ///
 /// Kiến thức Dart bạn đã học (Generics nhiều tham số):

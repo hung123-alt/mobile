@@ -6,7 +6,7 @@ import '../../firebase_options.dart';
 import 'collection_names.dart';
 
 /// Quản lý ánh xạ giữa Firebase Auth `uid` và hồ sơ Firestore.
-///
+// ignore_for_file: unintended_html_in_doc_comment
 /// VÌ SAO CẦN FILE NÀY?
 ///
 /// Firestore Security Rules KHÔNG query được theo field. Rules chỉ biết

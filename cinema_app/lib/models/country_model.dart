@@ -1,3 +1,4 @@
+// ignore_for_file: unintended_html_in_doc_comment
 import 'base_entity.dart';
 
 /// Model quốc gia - kế thừa BaseEntity<int>
@@ -11,12 +12,12 @@ class Country extends BaseEntity<int> {
   final bool isVisible;
 
   Country({
-    required int id,
-    required String name,
-    required String description,
+    required super.id,
+    required super.name,
+    required super.description,
     required this.slug,
     required this.isVisible,
-  }) : super(id: id, name: name, description: description);
+  });
 
   /// Parse từ JSON (hỗ trợ cả camelCase và snake_case, id kiểu lẫn lộn).
   factory Country.fromJson(Map<String, dynamic> json, {String? docId}) {

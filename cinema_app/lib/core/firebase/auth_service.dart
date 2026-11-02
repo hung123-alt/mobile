@@ -11,9 +11,7 @@ class AuthService {
   static AuthService? _instance;
 
   static AuthService get instance {
-    if (_instance == null) {
-      _instance = AuthService._();
-    }
+    _instance ??= AuthService._();
     return _instance!;
   }
 
@@ -65,7 +63,7 @@ class AuthService {
   /// Đây là ví dụ "privacy by design" nêu trong báo cáo Câu 9:
   /// app chỉ xin những quyền tối thiểu cần thiết.
   Future<UserCredential> signInWithGoogle() async {
-    // TODO: thêm package google_sign_in, cần cấu hình SHA-1 trên Firebase Console.
+    // GHI CHÚ: thêm package google_sign_in, cần cấu hình SHA-1 trên Firebase Console.
     // Hiện tại chưa cài nên tạm báo lỗi rõ ràng thay vì crash.
     throw FirestoreException(
       'google-sign-in-not-installed',

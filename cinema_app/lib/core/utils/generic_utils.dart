@@ -1,3 +1,4 @@
+// ignore_for_file: unintended_html_in_doc_comment
 /// Bộ tiện ích Generic dùng chung cho toàn app.
 ///
 /// Áp dụng kiến thức tuần 7 - "Generics với hàm" (tuần 3 PDF slide 26)

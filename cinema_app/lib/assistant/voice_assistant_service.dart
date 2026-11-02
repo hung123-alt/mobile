@@ -113,10 +113,15 @@ class VoiceAssistantService extends ChangeNotifier {
             _onHeard(text);
           }
         },
+        // ignore: deprecated_member_use
         localeId: 'vi-VN',
+        // ignore: deprecated_member_use
         listenFor: const Duration(seconds: 30),
+        // ignore: deprecated_member_use
         pauseFor: const Duration(seconds: 4),
+        // ignore: deprecated_member_use
         cancelOnError: true,
+        // ignore: deprecated_member_use
         partialResults: true,
       );
     } catch (_) {

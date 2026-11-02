@@ -1,3 +1,4 @@
+// ignore_for_file: unintended_html_in_doc_comment
 /// Lớp cơ sở Generic dùng chung cho mọi entity.
 ///
 /// Mục đích: tránh lặp lại các thuộc tính giống nhau

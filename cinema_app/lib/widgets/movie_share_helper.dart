@@ -261,13 +261,4 @@ class MovieShareHelper {
     } catch (_) {}
     return false;
   }
-
-  /// Trả về object có method `share(text, {subject})` nếu `share_plus`
-  /// khả dụng, ngược lại null. Dùng `Function.apply` qua `dynamic`
-  /// để không cần import cứng ở compile-time vẫn chạy được khi đã pub get.
-  static Future<dynamic> _loadSharePlus() async {
-    // Đã dùng `share_plus` trực tiếp ở [_systemShare], giữ hàm này để
-    // tương thích ngược nếu nơi khác còn gọi.
-    return null;
-  }
 }

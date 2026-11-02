@@ -24,9 +24,9 @@ class Movie extends BaseEntity<int> {
   final List<Country> countries;
 
   Movie({
-    required int id,
-    required String name,
-    required String description,
+    required super.id,
+    required super.name,
+    required super.description,
     required this.slug,
     required this.posterUrl,
     required this.bannerUrl,
@@ -44,7 +44,7 @@ class Movie extends BaseEntity<int> {
     required this.updatedAt,
     required this.genres,
     required this.countries,
-  }) : super(id: id, name: name, description: description);
+  });
 
   // ===== Getters riêng của Movie =====
 
