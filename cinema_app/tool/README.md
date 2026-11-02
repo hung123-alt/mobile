@@ -4,9 +4,9 @@ Script lấy phim từ **VSMOV API** rồi đổ thẳng vào **Firestore** (mob
 Firestore, không đọc MySQL — nên script này tách riêng khỏi `server/src/seed.ts`).
 
 Viết bằng **Dart thuần**, chạy bằng `dart run` — **không cần Node.js**, không cần
-Flutter SDK.
+Flutter SDK. Thư mục `tool/` nằm ngoài `lib/` nên **không dính vào app** khi build.
 
-## Chạy
+## Chạy tay
 
 ```bash
 cd cinema_app/tool
@@ -37,7 +37,7 @@ nên script chỉ cần đăng nhập Firebase Auth bằng tài khoản admin r�
 
 ```powershell
 $env:SEED_ADMIN_EMAIL = "admin@phimplay24.com"
-$env:SEED_ADMIN_PASSWORD = "mat-khau-admin"
+$env:SEED_ADMIN_PASSWORD = "mat-khau-admin-cua-ban"
 dart run seed_firestore.dart
 ```
 
@@ -45,9 +45,12 @@ dart run seed_firestore.dart
 
 ```bash
 export SEED_ADMIN_EMAIL="admin@phimplay24.com"
-export SEED_ADMIN_PASSWORD="mat-khau-admin"
+export SEED_ADMIN_PASSWORD="mat-khau-admin-cua-ban"
 dart run seed_firestore.dart
 ```
+
+> ⚠️ KHÔNG ghi mật khẩu thật vào file / commit lên git.
+> Mật khẩu chỉ để trong biến môi trường máy mình hoặc GitHub Secrets.
 
 API key đã điền sẵn trong script (API key là public, nằm trong app client).
 Muốn đổi thì set `SEED_API_KEY` / `SEED_PROJECT_ID`.
@@ -69,6 +72,21 @@ GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json dart run seed_firestore.dart
 ```
 
 Cách này bypass rules (không cần tài khoản admin).
+
+## Tự động mỗi ngày (GitHub Actions)
+
+Đã có workflow `.github/workflows/seed-movies.yml`:
+
+- Tự chạy **01:00 giờ Việt Nam mỗi ngày** (`cron: "0 18 * * *"`).
+- Có nút **Run workflow** để chạy tay khi muốn, chỉnh được `SEED_PAGES`.
+- Mật khẩu lấy từ **GitHub Secrets**, không nằm trong code:
+  - `SEED_ADMIN_EMAIL`
+  - `SEED_ADMIN_PASSWORD`
+  - `SEED_API_KEY` (tùy chọn)
+  - `FIREBASE_SERVICE_ACCOUNT` (tùy chọn — dán nguyên JSON key)
+
+Vào repo GitHub → **Settings → Secrets and variables → Actions** để thêm.
+Chỉ cần thêm 2 secrets email + password là chạy được, không cần tải key.
 
 ## Chính sách seed (IDEMPOTENT — giống `server/src/seed.ts`)
 
