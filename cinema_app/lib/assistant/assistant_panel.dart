@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'assistant_brain.dart';
 import 'assistant_manager.dart';
+import 'gemini_client.dart';
 
 /// Panel chat trượt lên khi bấm vào orb.
 /// Hỗ trợ cả gõ chữ và bấm mic, hiển thị lịch sử hội thoại.
@@ -24,12 +25,30 @@ class AssistantPanel extends StatefulWidget {
 
 class _AssistantPanelState extends State<AssistantPanel> {
   final _input = TextEditingController();
+  final _keyInput = TextEditingController();
   final _scroll = ScrollController();
   bool _busy = false;
+  bool _showKeyBox = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadKey();
+  }
+
+  Future<void> _loadKey() async {
+    await GeminiClient.loadSavedKey();
+    if (mounted) {
+      setState(() {
+        _showKeyBox = GeminiClient.manualKey == null;
+      });
+    }
+  }
 
   @override
   void dispose() {
     _input.dispose();
+    _keyInput.dispose();
     _scroll.dispose();
     super.dispose();
   }
@@ -48,6 +67,19 @@ class _AssistantPanelState extends State<AssistantPanel> {
     } finally {
       if (mounted) setState(() => _busy = false);
       _scrollToEnd();
+    }
+  }
+
+  Future<void> _saveKey() async {
+    final k = _keyInput.text.trim();
+    if (k.isEmpty) return;
+    await GeminiClient.saveKey(k);
+    _keyInput.clear();
+    if (mounted) {
+      setState(() => _showKeyBox = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đã lưu key Gemini trên máy này.')),
+      );
     }
   }
 
@@ -147,12 +179,55 @@ class _AssistantPanelState extends State<AssistantPanel> {
                       ),
                     ),
                     IconButton(
+                      tooltip: 'Nhập key Gemini',
+                      icon: Icon(
+                        Icons.vpn_key_rounded,
+                        color: GeminiClient.manualKey != null
+                            ? const Color(0xFF22C55E)
+                            : const Color(0xFF9CA3AF),
+                      ),
+                      onPressed: () =>
+                          setState(() => _showKeyBox = !_showKeyBox),
+                    ),
+                    IconButton(
                       icon: const Icon(Icons.close_rounded),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
                 ),
               ),
+              if (_showKeyBox)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _keyInput,
+                          obscureText: true,
+                          decoration: InputDecoration(
+                            hintText: GeminiClient.manualKey == null
+                                ? 'Dán key Gemini (AIza... hoặc AQ....)'
+                                : 'Đã lưu key • dán key mới để thay',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 9,
+                            ),
+                          ),
+                          onSubmitted: (_) => _saveKey(),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: _saveKey,
+                        child: const Text('Lưu'),
+                      ),
+                    ],
+                  ),
+                ),
               const Divider(height: 1),
               Expanded(
                 child: messages.isEmpty

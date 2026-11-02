@@ -2,10 +2,12 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Client gọi trực tiếp Gemini REST `generateContent`.
-/// Key nằm trong app qua `--dart-define=GEMINI_API_KEY=...` (theo lựa chọn của bạn).
-/// Kiến trúc ladder rút gọn từ Mark-LIV: flash-lite trước, flash sau,
+/// Key lấy theo thứ tự: key dán trong app (panel chat) -> `--dart-define=GEMINI_API_KEY=...`.
+/// Hỗ trợ cả 2 định dạng key cũ `AIza...` và mới `AQ....`.
+/// Ladder rút gọn từ Mark-LIV: flash-lite trước, flash sau,
 /// model 429 thì cooldown 5 phút + xoay key (nhiều key cách nhau bằng dấu phẩy).
 class GeminiClient {
   GeminiClient({http.Client? client}) : _client = client ?? http.Client();
@@ -21,13 +23,56 @@ class GeminiClient {
 
   final Map<String, DateTime> _cooldownUntil = {};
 
+  /// Key dán tay trong app (panel chat), ưu tiên hơn --dart-define.
+  /// Hỗ trợ cả key cũ `AIza...` lẫn key mới `AQ....`.
+  static String? _manualKey;
+  static void setManualKey(String? key) {
+    final k = key?.trim();
+    _manualKey = (k == null || k.isEmpty) ? null : k;
+  }
+
+  static String? get manualKey => _manualKey;
+
+  /// Nạp key đã lưu trên máy (SharedPreferences) vào bộ nhớ.
+  static Future<void> loadSavedKey() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString('gemini_api_key')?.trim() ?? '';
+      if (saved.isNotEmpty) _manualKey = saved;
+    } catch (_) {}
+  }
+
+  /// Lưu key dán tay xuống máy để lần sau khỏi nhập lại.
+  static Future<void> saveKey(String key) async {
+    final k = key.trim();
+    _manualKey = k.isEmpty ? null : k;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (k.isEmpty) {
+        await prefs.remove('gemini_api_key');
+      } else {
+        await prefs.setString('gemini_api_key', k);
+      }
+    } catch (_) {}
+  }
+
   /// Lỗi chi tiết của lần gọi gần nhất, để Brain hiện lên panel cho bạn thấy.
   /// Ví dụ: missing_key | http_400 | http_403 | http_404 | http_429 | network | empty.
   String? lastError;
 
   List<String> _keys() {
+    final list = <String>[];
+    final manual = _manualKey?.trim() ?? '';
+    if (manual.isNotEmpty) list.addAll(_splitKeys(manual));
     const raw = String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
-    if (raw.isEmpty) return const [];
+    list.addAll(_splitKeys(raw));
+    // Bỏ trùng, giữ thứ tự: key dán tay trước.
+    final seen = <String>{};
+    return list.where((k) => seen.add(k)).toList();
+  }
+
+  static List<String> _splitKeys(String raw) {
+    if (raw.trim().isEmpty) return const [];
     return raw
         .split(',')
         .map((e) => e.trim())
@@ -35,7 +80,7 @@ class GeminiClient {
         .toList();
   }
 
-  bool get hasKey => _keys().isNotEmpty;
+  bool get hasKey => _manualKey?.isNotEmpty == true || _keys().isNotEmpty;
 
   bool _cooling(String model) {
     final until = _cooldownUntil[model];
@@ -59,8 +104,9 @@ class GeminiClient {
   }) async {
     final keys = _keys();
     if (keys.isEmpty) {
-      lastError = 'missing_key: chưa truyền --dart-define=GEMINI_API_KEY';
-      debugPrint('[Gemini] thiếu GEMINI_API_KEY (--dart-define)');
+      lastError =
+          'missing_key: bạn dán key Gemini (AIza... hoặc AQ....) vào ô key trong khung chat rồi bấm Lưu, hoặc chạy kèm --dart-define=GEMINI_API_KEY=...';
+      debugPrint('[Gemini] thiếu GEMINI_API_KEY');
       return null;
     }
 
@@ -70,7 +116,13 @@ class GeminiClient {
     } else if (tier == 'lite') {
       ladder.add('gemini-2.5-flash-lite');
     } else {
-      ladder.addAll(['gemini-2.5-flash-lite', 'gemini-2.5-flash']);
+      // Thử lần lượt, model mới trước, model cũ sau để tương thích key cũ/mới.
+      ladder.addAll([
+        'gemini-2.5-flash-lite',
+        'gemini-2.5-flash',
+        'gemini-2.0-flash',
+        'gemini-1.5-flash-latest',
+      ]);
     }
 
     for (final model in ladder) {
