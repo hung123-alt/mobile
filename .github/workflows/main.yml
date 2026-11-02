@@ -1,0 +1,52 @@
+name: Seed phim moi vao Firestore
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+    inputs:
+      pages:
+        description: "So trang VSMOV can quet (SEED_PAGES)"
+        required: false
+        default: "5"
+
+permissions:
+  contents: read
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cinema_app/tool
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cai Dart stable
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Viet serviceAccountKey.json (neu co secret FIREBASE_SERVICE_ACCOUNT)
+        run: |
+          if [ -n "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > serviceAccountKey.json
+            echo "Da ghi serviceAccountKey.json tu secret."
+          else
+            echo "Khong co secret FIREBASE_SERVICE_ACCOUNT -> dung dang nhap admin."
+          fi
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      - name: Chay seed Firestore
+        run: |
+          dart pub get
+          dart run seed_firestore.dart
+        env:
+          SEED_ADMIN_EMAIL: ${{ secrets.SEED_ADMIN_EMAIL }}
+          SEED_ADMIN_PASSWORD: ${{ secrets.SEED_ADMIN_PASSWORD }}
+          SEED_API_KEY: ${{ secrets.SEED_API_KEY }}
+          SEED_PROJECT_ID: cinema-app-b760e
+          SEED_PAGES: ${{ inputs.pages || '5' }}
