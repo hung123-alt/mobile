@@ -5,13 +5,33 @@
 //   dart pub get
 //   dart run seed_firestore.dart
 //
-// Cần service account key của Firebase:
-//   Firebase Console → Project settings → Service accounts → Generate key
-//   → đặt file vào cinema_app/tool/serviceAccountKey.json
-//   (file này đã được .gitignore loại trừ, KHÔNG commit lên git)
+// ============================================================
+// 2 CÁCH XÁC THỰC (chọn 1)
+// ============================================================
 //
-// Hoặc dùng Application Default Credentials:
-//   GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json dart run seed_firestore.dart
+//  CÁCH 1 — ĐĂNG NHẬP BẰNG TÀI KHOẢN ADMIN (khuyến nghị, KHÔNG cần tải key)
+//
+//    Firestore rules của bạn cho phép admin đã đăng nhập ghi movies/episodes:
+//      match /movies/{slug} { allow write: if isSignedIn() && isAdmin(); }
+//
+//    Nên script chỉ cần đăng nhập Firebase Auth bằng tài khoản admin,
+//    lấy idToken rồi dùng làm Bearer token cho Firestore REST API.
+//
+//    PowerShell:
+//      $env:SEED_ADMIN_EMAIL = "admin@phimplay24.com"
+//      $env:SEED_ADMIN_PASSWORD = "mat-khau-admin"
+//      dart run seed_firestore.dart
+//
+//    (API key mặc định đã điền sẵn — API key là public, không phải bí mật.)
+//
+//  CÁCH 2 — SERVICE ACCOUNT KEY (khi không muốn dùng tài khoản admin)
+//
+//    Firebase Console → Project settings → Service accounts → Generate key
+//    → đặt file vào cinema_app/tool/serviceAccountKey.json
+//    (file đã được .gitignore loại trừ, KHÔNG commit lên git)
+//
+//    Hoặc:
+//      GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json dart run seed_firestore.dart
 //
 // ============================================================
 // CHÍNH SÁCH SEED (giống server/src/seed.ts — IDEMPOTENT):
@@ -33,6 +53,18 @@ import 'package:http/http.dart' as http;
 
 const String vsmovBase = 'https://vsmov.com/api';
 
+/// Firebase project (lấy từ lib/firebase_options.dart).
+const String defaultProjectId = 'cinema-app-b760e';
+
+/// Firebase Web API key — ĐÂY KHÔNG PHẢI BÍ MẬT (nó nằm trong app client).
+const String defaultApiKey = 'AIzaSyBDTqJpixcj5fF6KUUY4xieg_5TOC867_M';
+
+/// Scope cần cho Firestore khi dùng service account.
+const List<String> firestoreScopes = [
+  'https://www.googleapis.com/auth/cloud-platform',
+  'https://www.googleapis.com/auth/firestore',
+];
+
 /// Số trang danh sách phim lấy từ VSMOV. Tăng để lấy nhiều phim hơn:
 ///   SEED_PAGES=8 dart run seed_firestore.dart
 final int pages = int.tryParse(Platform.environment['SEED_PAGES'] ?? '') ?? 5;
@@ -43,11 +75,7 @@ const int requestDelayMs = 1200;
 /// Firestore database id (mặc định của project là `(default)`).
 const String databaseId = '(default)';
 
-late final auth.AuthClient authClient;
-late final String projectId;
-
-/// Gốc Firestore REST API.
-late final String firestoreRoot;
+late final _FirestoreAccess store;
 
 Future<void> main(List<String> args) async {
   print('═══════════════════════════════════════');
@@ -55,33 +83,18 @@ Future<void> main(List<String> args) async {
   print('  (IDEMPOTENT: chỉ thêm phim mới theo slug)');
   print('═══════════════════════════════════════');
 
-  // --- 1. Xác thực bằng service account ---
-  final credentials = _loadCredentials();
-  projectId = credentials['project_id'] as String? ?? '';
-  if (projectId.isEmpty) {
-    _fail('Không tìm thấy "project_id" trong file service account key.');
-  }
+  store = await _FirestoreAccess.create();
 
-  authClient = await auth.clientViaServiceAccount(
-    auth.ServiceAccountCredentials.fromJson(credentials),
-    const ['https://www.googleapis.com/auth/cloud-platform'],
-  );
-
-  firestoreRoot =
-      'https://firestore.googleapis.com/v1/projects/$projectId/databases/$databaseId/documents';
-
-  print('🔌 Firebase project: $projectId ✅');
-
-  // --- 2. Lấy danh sách phim từ VSMOV ---
+  // --- Lấy danh sách phim từ VSMOV ---
   final list = await fetchMovieList();
   if (list.isEmpty) {
     _fail('Không lấy được phim nào từ VSMOV.');
   }
 
-  // --- 3. Biến id tiếp theo cho phim ---
-  var nextMovieId = (await _maxIntField('movies', 'id')) + 1;
-  var maxGenreId = await _maxIntField('genres', 'id');
-  var maxCountryId = await _maxIntField('countries', 'id');
+  // --- Biến id tiếp theo cho phim ---
+  var nextMovieId = (await store.maxIntField('movies', 'id')) + 1;
+  var maxGenreId = await store.maxIntField('genres', 'id');
+  var maxCountryId = await store.maxIntField('countries', 'id');
 
   var insertedMovies = 0;
   var insertedEpisodes = 0;
@@ -98,7 +111,7 @@ Future<void> main(List<String> args) async {
     }
 
     // Phim đã tồn tại → skip toàn bộ, giữ nguyên data cũ + Server 2 thêm tay.
-    if (await _movieExists(slug)) {
+    if (await store.movieExists(slug)) {
       skipped++;
       continue;
     }
@@ -127,7 +140,7 @@ Future<void> main(List<String> args) async {
     final movieId = nextMovieId++;
 
     // --- Ghi doc phim (docId = id dạng chuỗi, khớp AdminMovieEditPage) ---
-    final moviePayload = <String, dynamic>{
+    await store.setDoc('movies', '$movieId', {
       'id': movieId,
       'title': movie['name']?.toString(),
       'name': movie['name']?.toString(),
@@ -157,15 +170,14 @@ Future<void> main(List<String> args) async {
       'created_at': nowIso,
       'updatedAt': nowIso,
       'updated_at': nowIso,
-    };
-    await _setDoc('movies', '$movieId', moviePayload);
+    });
     insertedMovies++;
 
     // --- Gắn thể loại + quốc gia ---
     for (final cat in categories) {
       final catSlug = (cat['slug'] ?? '').toString();
       if (catSlug.isEmpty) continue;
-      maxGenreId = await _ensureDimension(
+      final genreId = await store.ensureDimension(
         collection: 'genres',
         docId: catSlug,
         payload: {
@@ -176,8 +188,8 @@ Future<void> main(List<String> args) async {
           'isVisible': true,
         },
       );
-      final genreId = await _intFieldOf('genres', catSlug, 'id');
-      await _setDoc('movie_genres', '${movieId}_$genreId', {
+      if (genreId > maxGenreId) maxGenreId = genreId;
+      await store.setDoc('movie_genres', '${movieId}_$genreId', {
         'movie_id': movieId,
         'movieId': movieId,
         'genre_id': genreId,
@@ -188,7 +200,7 @@ Future<void> main(List<String> args) async {
     for (final c in countries) {
       final countrySlug = (c['slug'] ?? '').toString();
       if (countrySlug.isEmpty) continue;
-      maxCountryId = await _ensureDimension(
+      final countryId = await store.ensureDimension(
         collection: 'countries',
         docId: countrySlug,
         payload: {
@@ -197,8 +209,8 @@ Future<void> main(List<String> args) async {
           'slug': countrySlug,
         },
       );
-      final countryId = await _intFieldOf('countries', countrySlug, 'id');
-      await _setDoc('movie_countries', '${movieId}_$countryId', {
+      if (countryId > maxCountryId) maxCountryId = countryId;
+      await store.setDoc('movie_countries', '${movieId}_$countryId', {
         'movie_id': movieId,
         'movieId': movieId,
         'country_id': countryId,
@@ -224,8 +236,8 @@ Future<void> main(List<String> args) async {
 
         // Bóc số tập từ filename/name, không có thì dùng index.
         var epNum = 0;
-        final nameMatch =
-            RegExp(r'\d+').firstMatch('${ep['filename'] ?? ''} ${ep['name'] ?? ''}');
+        final nameMatch = RegExp(r'\d+')
+            .firstMatch('${ep['filename'] ?? ''} ${ep['name'] ?? ''}');
         if (nameMatch != null) {
           epNum = int.tryParse(nameMatch.group(0)!) ?? 0;
         }
@@ -233,26 +245,29 @@ Future<void> main(List<String> args) async {
         if (epNum <= 0) continue;
 
         // docId có server để multi-server cùng 1 tập không đè nhau.
-        final epDocId = '${movieId}_${epNum}_${slugify(serverName)}';
-        await _setDoc('episodes', epDocId, {
-          'id': movieId * 1000 + epNum,
-          'movie_id': movieId,
-          'movieId': movieId,
-          'episode_number': epNum,
-          'episodeNumber': epNum,
-          'name': (ep['filename'] ?? 'Tập $epNum').toString(),
-          'title': (ep['filename'] ?? 'Tập $epNum').toString(),
-          'embed_url': link,
-          'embedUrl': link,
-          'server_name': serverName,
-          'serverName': serverName,
-          'duration_seconds': 0,
-          'durationSeconds': 0,
-          'skip_intro_seconds': 0,
-          'skipIntroSeconds': 0,
-          'updatedAt': nowIso,
-          'updated_at': nowIso,
-        });
+        await store.setDoc(
+          'episodes',
+          '${movieId}_${epNum}_${slugify(serverName)}',
+          {
+            'id': movieId * 1000 + epNum,
+            'movie_id': movieId,
+            'movieId': movieId,
+            'episode_number': epNum,
+            'episodeNumber': epNum,
+            'name': (ep['filename'] ?? 'Tập $epNum').toString(),
+            'title': (ep['filename'] ?? 'Tập $epNum').toString(),
+            'embed_url': link,
+            'embedUrl': link,
+            'server_name': serverName,
+            'serverName': serverName,
+            'duration_seconds': 0,
+            'durationSeconds': 0,
+            'skip_intro_seconds': 0,
+            'skipIntroSeconds': 0,
+            'updatedAt': nowIso,
+            'updated_at': nowIso,
+          },
+        );
         insertedEpisodes++;
       }
     }
@@ -273,7 +288,273 @@ Future<void> main(List<String> args) async {
   print('  💡 Muốn seed lại 1 phim → xóa doc phim đó trong Firestore rồi chạy lại.');
   print('═══════════════════════════════════════\n');
 
-  authClient.close();
+  store.close();
+}
+
+// ============================================================
+// XÁC THỰC + FIRESTORE REST API
+// ============================================================
+
+/// HTTP client tự gắn header `Authorization: Bearer <token>`.
+class _TokenClient extends http.BaseClient {
+  _TokenClient(this.token, {http.Client? inner})
+      : _inner = inner ?? http.Client();
+
+  final String token;
+  final http.Client _inner;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) {
+    request.headers['Authorization'] = 'Bearer $token';
+    return _inner.send(request);
+  }
+
+  @override
+  void close() {
+    _inner.close();
+    super.close();
+  }
+}
+
+/// Bọc Firestore REST API.
+class _FirestoreAccess {
+  _FirestoreAccess._(this._client, this._projectId);
+
+  final http.Client _client;
+  final String _projectId;
+
+  late final String _root =
+      'https://firestore.googleapis.com/v1/projects/$_projectId/databases/$databaseId/documents';
+
+  static Future<_FirestoreAccess> create() async {
+    final keyPath = Platform.environment['GOOGLE_APPLICATION_CREDENTIALS'] ??
+        'serviceAccountKey.json';
+
+    // Ưu tiên service account nếu có file key.
+    if (File(keyPath).existsSync()) {
+      final json = Map<String, dynamic>.from(
+        jsonDecode(File(keyPath).readAsStringSync()),
+      );
+      final projectId = json['project_id'] as String? ?? defaultProjectId;
+      final credentials = auth.ServiceAccountCredentials.fromJson(json);
+      final access = await auth.obtainAccessCredentialsViaServiceAccount(
+        credentials,
+        firestoreScopes,
+        http.Client(),
+      );
+      print('🔐 Xác thực: Service Account (bypass rules)');
+      print('🔌 Firebase project: $projectId ✅');
+      return _FirestoreAccess._(
+        _TokenClient(access.accessToken.data),
+        projectId,
+      );
+    }
+
+    // Không có key → dùng đăng nhập tài khoản admin.
+    final email = Platform.environment['SEED_ADMIN_EMAIL'] ?? '';
+    final password = Platform.environment['SEED_ADMIN_PASSWORD'] ?? '';
+    if (email.isEmpty || password.isEmpty) {
+      _fail(
+        'Chưa có thông tin xác thực. Chọn 1 trong 2:\n'
+        '\n'
+        '  [CÁCH 1] Đăng nhập bằng tài khoản admin (không cần tải key):\n'
+        '    PowerShell:\n'
+        '      \$env:SEED_ADMIN_EMAIL = "admin@phimplay24.com"\n'
+        '      \$env:SEED_ADMIN_PASSWORD = "mat-khau-admin"\n'
+        '    Bash / macOS / Linux:\n'
+        '      export SEED_ADMIN_EMAIL="admin@phimplay24.com"\n'
+        '      export SEED_ADMIN_PASSWORD="mat-khau-admin"\n'
+        '    Rồi chạy: dart run seed_firestore.dart\n'
+        '\n'
+        '  [CÁCH 2] Dùng service account key:\n'
+        '    Firebase Console → Project settings → Service accounts → Generate key\n'
+        '    → đặt file vào cinema_app/tool/serviceAccountKey.json\n'
+        '    (hoặc set GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json)',
+      );
+    }
+
+    final apiKey = Platform.environment['SEED_API_KEY'] ?? defaultApiKey;
+    final projectId = Platform.environment['SEED_PROJECT_ID'] ?? defaultProjectId;
+
+    // Đăng nhập Firebase Auth qua Identity Toolkit REST API.
+    final res = await http.post(
+      Uri.parse(
+        'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword'
+        '?key=$apiKey',
+      ),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        'password': password,
+        'returnSecureToken': true,
+      }),
+    );
+
+    if (res.statusCode != 200) {
+      _fail(
+        'Đăng nhập thất bại (HTTP ${res.statusCode}): ${res.body}\n'
+        '  → Kiểm tra lại email/mật khẩu tài khoản admin trong\n'
+        '    Firebase Console → Authentication → Users.',
+      );
+    }
+
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    final idToken = body['idToken'] as String;
+    final localId = body['localId'] as String;
+
+    print('🔐 Xác thực: đăng nhập tài khoản admin (uid=$localId)');
+    print('🔌 Firebase project: $projectId ✅');
+    return _FirestoreAccess._(_TokenClient(idToken), projectId);
+  }
+
+  void close() => _client.close();
+
+  // ----- Firestore operations -----
+
+  /// Ghi (merge) 1 doc. Tạo mới nếu chưa có.
+  Future<void> setDoc(
+    String collection,
+    String docId,
+    Map<String, dynamic> data,
+  ) async {
+    // updateMask liệt kê đúng field cần ghi → PATCH sẽ MERGE,
+    // không xoá các field khác đang có sẵn trong doc.
+    final mask = data.keys.map((k) => 'updateMask.fieldPaths=$k').join('&');
+    final url = Uri.parse('$_root/$collection/$docId?$mask');
+    final res = await _client.patch(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'fields': _toFirestoreFields(data)}),
+    );
+    if (res.statusCode >= 300) {
+      throw Exception(
+        'Ghi $collection/$docId thất bại (${res.statusCode}): ${res.body}',
+      );
+    }
+  }
+
+  /// Kiểm tra phim đã tồn tại theo slug chưa.
+  Future<bool> movieExists(String slug) async {
+    final res = await _client.post(
+      Uri.parse('$_root:runQuery'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'structuredQuery': {
+          'from': [
+            {'collectionId': 'movies'}
+          ],
+          'where': {
+            'fieldFilter': {
+              'field': {'fieldPath': 'slug'},
+              'op': 'EQUAL',
+              'value': {'stringValue': slug},
+            },
+          },
+          'limit': 1,
+        },
+      }),
+    );
+    if (res.statusCode >= 300) return false;
+    final decoded = jsonDecode(res.body);
+    if (decoded is! List) return false;
+    // runQuery trả về [] nếu không có doc khớp.
+    return decoded.isNotEmpty;
+  }
+
+  /// Lấy giá trị int lớn nhất của 1 field trong collection (làm id kế tiếp).
+  Future<int> maxIntField(String collection, String field) async {
+    final res = await _client.post(
+      Uri.parse('$_root:runQuery'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'structuredQuery': {
+          'from': [
+            {'collectionId': collection}
+          ],
+          'orderBy': [
+            {
+              'field': {'fieldPath': field},
+              'direction': 'DESCENDING',
+            }
+          ],
+          'limit': 1,
+        },
+      }),
+    );
+    if (res.statusCode >= 300) return 0;
+    final decoded = jsonDecode(res.body);
+    if (decoded is! List || decoded.isEmpty) return 0;
+    final doc = decoded.first;
+    final fields = (doc is Map ? doc['document'] : null) is Map
+        ? (doc['document']['fields'] as Map)
+        : null;
+    if (fields == null) return 0;
+    final raw = fields[field];
+    if (raw is! Map) return 0;
+    return int.tryParse('${raw['integerValue'] ?? raw['doubleValue'] ?? 0}') ?? 0;
+  }
+
+  /// Tạo doc danh mục (genres/countries) nếu chưa có, trả về id của doc đó.
+  Future<int> ensureDimension({
+    required String collection,
+    required String docId,
+    required Map<String, dynamic> payload,
+  }) async {
+    if (!await _docExists(collection, docId)) {
+      await setDoc(collection, docId, payload);
+    }
+    return _intFieldOf(collection, docId, 'id');
+  }
+
+  Future<int> _intFieldOf(String collection, String docId, String field) async {
+    final res = await _client.get(Uri.parse('$_root/$collection/$docId'));
+    if (res.statusCode >= 300) return 0;
+    final decoded = jsonDecode(res.body);
+    if (decoded is! Map) return 0;
+    final fields = decoded['fields'];
+    if (fields is! Map) return 0;
+    final raw = fields[field];
+    if (raw is! Map) return 0;
+    return int.tryParse('${raw['integerValue'] ?? raw['doubleValue'] ?? 0}') ?? 0;
+  }
+
+  Future<bool> _docExists(String collection, String docId) async {
+    final res = await _client.get(Uri.parse('$_root/$collection/$docId'));
+    return res.statusCode < 300;
+  }
+}
+
+/// Chuyển map Dart → trường Firestore REST (stringValue, integerValue...).
+Map<String, dynamic> _toFirestoreFields(Map<String, dynamic> data) {
+  final fields = <String, dynamic>{};
+  data.forEach((key, value) {
+    fields[key] = _encodeValue(value);
+  });
+  return fields;
+}
+
+Map<String, dynamic> _encodeValue(dynamic value) {
+  if (value == null) return {'nullValue': null};
+  if (value is bool) return {'booleanValue': value};
+  if (value is int) return {'integerValue': value.toString()};
+  if (value is double) return {'doubleValue': value};
+  if (value is num) return {'doubleValue': value.toDouble()};
+  if (value is DateTime) return {'timestampValue': value.toIso8601String()};
+  if (value is Map) {
+    return {
+      'mapValue': {
+        'fields': _toFirestoreFields(Map<String, dynamic>.from(value)),
+      },
+    };
+  }
+  if (value is List) {
+    return {
+      'arrayValue': {
+        'values': value.map(_encodeValue).toList(),
+      },
+    };
+  }
+  return {'stringValue': value.toString()};
 }
 
 // ============================================================
@@ -314,10 +595,7 @@ String slugify(String input) {
 
 List<Map<String, dynamic>> _asList(dynamic value) {
   if (value is List) {
-    return value
-        .whereType<Map>()
-        .map((e) => Map<String, dynamic>.from(e))
-        .toList();
+    return value.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
   }
   return <Map<String, dynamic>>[];
 }
@@ -386,172 +664,6 @@ Future<Map<String, dynamic>?> fetchMovieDetail(String slug) async {
   } catch (_) {
     return null;
   }
-}
-
-// ============================================================
-// FIRESTORE REST API
-// ============================================================
-
-Map<String, dynamic> _loadCredentials() {
-  final path = Platform.environment['GOOGLE_APPLICATION_CREDENTIALS'] ??
-      'serviceAccountKey.json';
-  final file = File(path);
-  if (!file.existsSync()) {
-    _fail(
-      'Không thấy file service account key: $path\n'
-      '  → Firebase Console → Project settings → Service accounts → Generate key\n'
-      '  → đặt file vào cinema_app/tool/serviceAccountKey.json',
-    );
-  }
-  return Map<String, dynamic>.from(jsonDecode(file.readAsStringSync()));
-}
-
-/// Chuyển map Dart → trường Firestore REST (stringValue, integerValue...).
-Map<String, dynamic> _toFirestoreFields(Map<String, dynamic> data) {
-  final fields = <String, dynamic>{};
-  data.forEach((key, value) {
-    fields[key] = _encodeValue(value);
-  });
-  return fields;
-}
-
-Map<String, dynamic> _encodeValue(dynamic value) {
-  if (value == null) return {'nullValue': null};
-  if (value is bool) return {'booleanValue': value};
-  if (value is int) return {'integerValue': value.toString()};
-  if (value is double) return {'doubleValue': value};
-  if (value is num) return {'doubleValue': value.toDouble()};
-  if (value is DateTime) return {'timestampValue': value.toIso8601String()};
-  if (value is Map) {
-    return {
-      'mapValue': {
-        'fields': _toFirestoreFields(Map<String, dynamic>.from(value)),
-      },
-    };
-  }
-  if (value is List) {
-    return {
-      'arrayValue': {
-        'values': value.map(_encodeValue).toList(),
-      },
-    };
-  }
-  return {'stringValue': value.toString()};
-}
-
-/// Ghi (merge) 1 doc. Tạo mới nếu chưa có.
-Future<void> _setDoc(
-  String collection,
-  String docId,
-  Map<String, dynamic> data,
-) async {
-  // updateMask liệt kê đúng field cần ghi → PATCH sẽ MERGE,
-  // không xoá các field khác đang có sẵn trong doc.
-  final mask = data.keys.map((k) => 'updateMask.fieldPaths=$k').join('&');
-  final url = Uri.parse('$firestoreRoot/$collection/$docId?$mask');
-  final res = await authClient.patch(
-    url,
-    headers: {'Content-Type': 'application/json'},
-    body: jsonEncode({
-      'fields': _toFirestoreFields(data),
-    }),
-  );
-  if (res.statusCode >= 300) {
-    throw Exception('Ghi $collection/$docId thất bại (${res.statusCode}): '
-        '${res.body}');
-  }
-}
-
-/// Kiểm tra phim đã tồn tại theo slug chưa.
-Future<bool> _movieExists(String slug) async {
-  final res = await authClient.post(
-    Uri.parse('$firestoreRoot:runQuery'),
-    headers: {'Content-Type': 'application/json'},
-    body: jsonEncode({
-      'structuredQuery': {
-        'from': [
-          {'collectionId': 'movies'}
-        ],
-        'where': {
-          'fieldFilter': {
-            'field': {'fieldPath': 'slug'},
-            'op': 'EQUAL',
-            'value': {'stringValue': slug},
-          },
-        },
-        'limit': 1,
-      },
-    }),
-  );
-  if (res.statusCode >= 300) return false;
-  final decoded = jsonDecode(res.body);
-  if (decoded is! List) return false;
-  // runQuery trả về [] nếu không có doc khớp.
-  return decoded.isNotEmpty;
-}
-
-/// Lấy giá trị int lớn nhất của 1 field trong collection (dùng làm id kế tiếp).
-Future<int> _maxIntField(String collection, String field) async {
-  final res = await authClient.post(
-    Uri.parse('$firestoreRoot:runQuery'),
-    headers: {'Content-Type': 'application/json'},
-    body: jsonEncode({
-      'structuredQuery': {
-        'from': [
-          {'collectionId': collection}
-        ],
-        'orderBy': [
-          {
-            'field': {'fieldPath': field},
-            'direction': 'DESCENDING',
-          }
-        ],
-        'limit': 1,
-      },
-    }),
-  );
-  if (res.statusCode >= 300) return 0;
-  final decoded = jsonDecode(res.body);
-  if (decoded is! List || decoded.isEmpty) return 0;
-  final doc = decoded.first;
-  final fields = (doc is Map ? doc['document'] : null) is Map
-      ? (doc['document']['fields'] as Map)
-      : null;
-  if (fields == null) return 0;
-  final raw = fields[field];
-  if (raw is! Map) return 0;
-  return int.tryParse('${raw['integerValue'] ?? raw['doubleValue'] ?? 0}') ?? 0;
-}
-
-/// Lấy 1 field int của 1 doc cụ thể.
-Future<int> _intFieldOf(String collection, String docId, String field) async {
-  final res = await authClient.get(Uri.parse('$firestoreRoot/$collection/$docId'));
-  if (res.statusCode >= 300) return 0;
-  final decoded = jsonDecode(res.body);
-  if (decoded is! Map) return 0;
-  final fields = decoded['fields'];
-  if (fields is! Map) return 0;
-  final raw = fields[field];
-  if (raw is! Map) return 0;
-  return int.tryParse('${raw['integerValue'] ?? raw['doubleValue'] ?? 0}') ?? 0;
-}
-
-/// Tạo doc danh mục (genres/countries) nếu chưa có, trả về id lớn nhất hiện tại.
-Future<int> _ensureDimension({
-  required String collection,
-  required String docId,
-  required Map<String, dynamic> payload,
-}) async {
-  final exists = await _docExists(collection, docId);
-  if (!exists) {
-    await _setDoc(collection, docId, payload);
-  }
-  return await _intFieldOf(collection, docId, 'id');
-}
-
-Future<bool> _docExists(String collection, String docId) async {
-  final res = await authClient.get(Uri.parse('$firestoreRoot/$collection/$docId'));
-  return res.statusCode < 300;
 }
 
 Never _fail(String message) {
