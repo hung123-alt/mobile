@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../core/firebase/collection_names.dart';
+import '../core/security/input_sanitizer.dart';
+import '../core/security/rate_limiter.dart';
 import '../models/comment_model.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
@@ -38,6 +40,10 @@ class _CommentSectionState extends State<CommentSection> {
   bool _isSending = false;
   CommentSortOption _sortOption = CommentSortOption.newest;
   Comment? _replyingTo;
+
+  // LOP 6 - chong spam nut Gui (P3): toi thieu 3 giay / 1 binh luan.
+  // Server NestJS da co throttler, day la lop chan som tren UI.
+  final RateLimiter _sendLimiter = RateLimiter(minIntervalMs: 3000);
 
   @override
   void initState() {
@@ -187,8 +193,38 @@ class _CommentSectionState extends State<CommentSection> {
       return;
     }
 
-    final text = _commentController.text.trim();
-    if (text.isEmpty || _isSending) return;
+    final rawText = _commentController.text.trim();
+    if (rawText.isEmpty || _isSending) return;
+
+    // LOP 6 - loc dau vao phia client (XSS): bo the HTML, cat do dai.
+    // Server NestJS da sanitize-html, day la lop chan som tren UI.
+    final validationError =
+        InputSanitizer.validateComment(rawText);
+    if (validationError != null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(validationError),
+          backgroundColor: Colors.orange[800],
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+    final text = InputSanitizer.cleanText(rawText);
+
+    // LOP 6 - chong spam: bam lien tuc thi chan, bao user doi 3 giay.
+    final allowed = _sendLimiter.run('send_comment', () {});
+    if (!allowed) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Bạn thao tác quá nhanh, vui lòng đợi 3 giây'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
     setState(() => _isSending = true);
 

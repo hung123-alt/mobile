@@ -39,7 +39,9 @@ dependencies:
   # Gọi REST API tới backend NestJS
   http: ^1.2.2
 
-  # Lưu token đăng nhập cục bộ
+  # Lưu token đăng nhập cục bộ (mã hoá: Keychain iOS / EncryptedSharedPreferences Android)
+  # LỚP 3 - token là bí mật, KHÔNG để SharedPreferences (XML plaintext).
+  flutter_secure_storage: ^9.2.2
   shared_preferences: ^2.3.3
 
   # ===== Firebase =====

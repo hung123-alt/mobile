@@ -31,9 +31,21 @@ class ApiService {
   String? getAccessToken() => _accessToken;
 
   /// Base URL đầy đủ từ path
+  /// LOP 4 - BAT BUOC HTTPS O PRODUCTION.
+  /// VÌ SAO? HTTP truyen plaintext, wifi cong cong doc trom duoc token.
+  /// Chi cho phep http voi host dev local (localhost/10.0.2.2/127.0.0.1);
+  /// production (host that) bat buoc https, neu khong nem [ApiException].
   Uri _buildUri(String path, [Map<String, dynamic>? query]) {
     final base = '${AppConstants.apiBaseUrl}$path';
     final uri = Uri.parse(base);
+    const devHosts = <String>{'localhost', '10.0.2.2', '127.0.0.1'};
+    if (uri.scheme == 'http' && !devHosts.contains(uri.host)) {
+      throw ApiException(
+        0,
+        'LOP 4: production bat buoc https (hien tai: $base). '
+        'Truyen --dart-define=API_BASE_URL=https://... khi build release.',
+      );
+    }
     if (query == null || query.isEmpty) {
       return uri;
     }

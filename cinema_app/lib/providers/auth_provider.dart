@@ -6,6 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/constants/app_constants.dart';
 import '../core/firebase/collection_names.dart';
 import '../core/firebase/user_auth_map_service.dart';
+import '../core/security/input_sanitizer.dart';
+import '../core/security/secure_token_storage.dart';
 import '../models/user_model.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -253,6 +255,15 @@ class AuthProvider extends ChangeNotifier {
           );
         }
 
+        // LỚP 3 - lưu token vào Keychain/EncryptedSharedPreferences (mã hoá),
+        // KHÔNG để SharedPreferences. Token lấy từ Firebase Auth ID token.
+        try {
+          final idToken = await fbUser?.getIdToken();
+          if (idToken != null && idToken.isNotEmpty) {
+            await SecureTokenStorage.saveTokens(accessToken: idToken);
+          }
+        } catch (_) {}
+
         final prefs = await SharedPreferences.getInstance();
         await prefs.setInt('auth_user_id', _currentUser!.id);
         await prefs.setString('auth_user_email', _currentUser!.email);
@@ -407,6 +418,14 @@ class AuthProvider extends ChangeNotifier {
           .set(newUserData);
 
       _currentUser = User.fromJson(newUserData);
+
+      // LỚP 3 - lưu token mã hoá ngay sau đăng ký (giống luồng đăng nhập).
+      try {
+        final idToken = await _auth.currentUser?.getIdToken();
+        if (idToken != null && idToken.isNotEmpty) {
+          await SecureTokenStorage.saveTokens(accessToken: idToken);
+        }
+      } catch (_) {}
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('auth_user_id', nextId);
@@ -665,9 +684,17 @@ class AuthProvider extends ChangeNotifier {
 
       final now = DateTime.now();
       final nowIso = now.toIso8601String();
-      final cleanAvatar = (avatarUrl != null && avatarUrl.trim().isNotEmpty)
+      var cleanAvatar = (avatarUrl != null && avatarUrl.trim().isNotEmpty)
           ? avatarUrl.trim()
           : null;
+      // LỚP 6 - chỉ chấp nhận URL ảnh https (hoặc asset nội bộ).
+      // Chặn file://, javascript:, data:, http để tránh XSS/phishing qua avatar.
+      if (cleanAvatar != null && !InputSanitizer.isSafeImageUrl(cleanAvatar)) {
+        _errorMessage = 'URL ảnh đại diện không hợp lệ (chỉ chấp nhận https)';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
       final cleanFullName = (fullName != null && fullName.trim().isNotEmpty)
           ? fullName.trim()
           : null;
@@ -831,6 +858,8 @@ class AuthProvider extends ChangeNotifier {
   Future<void> logout() async {
     try {
       await _auth.signOut();
+      // LỚP 3 - xoá token mã hoá khi logout, tránh token cũ sót lại trên máy.
+      await SecureTokenStorage.clearTokens();
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('auth_user_id');
       await prefs.remove('auth_user_email');
