@@ -64,7 +64,7 @@ class _RatingModalState extends State<RatingModal> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Không thể gửi đánh giá: $e'),
+          content: Text(e is StateError && e.message.contains('Hãy đăng nhập') ? 'Hãy đăng nhập để đánh giá' : 'Không thể gửi đánh giá: $e'),
           backgroundColor: Colors.red,
         ),
       );

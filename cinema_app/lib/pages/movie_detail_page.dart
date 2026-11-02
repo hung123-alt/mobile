@@ -235,12 +235,12 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
 
   // ===== MỞ MODAL ĐÁNH GIÁ =====
   Future<void> _openRatingModal() async {
-    if (FirebaseAuth.instance.currentUser == null) {
+    if (FirebaseAuth.instance.currentUser == null || !AuthProvider.instance.isAuthenticated) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Bạn cần đăng nhập bằng Firebase Authentication '
-            'để đánh giá phim.',
+            'Hãy đăng nhập để đánh giá',
+
           ),
         ),
       );
@@ -278,7 +278,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text(
-          'Đánh giá đã được lưu vào Firebase!',
+          'Đã đánh giá thành công',
         ),
         backgroundColor: Colors.green,
       ),
