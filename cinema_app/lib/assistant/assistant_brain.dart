@@ -99,7 +99,11 @@ BẠN LÀ TRỢ LÝ TRONG APP PHIMHAY24H. QUY TẮC TUYỆT ĐỐI:
       );
       if (content == null) {
         _setState(AssistantState.error);
-        return 'Mạng hoặc khóa Gemini đang bận. Bạn thử lại sau nhé.';
+        final detail = _client.lastError ?? 'không rõ nguyên nhân';
+        final msg =
+            'Lỗi gọi Gemini: $detail. Bạn kiểm tra key, quota và mạng rồi thử lại nhé.';
+        history.add(AssistantMessage('assistant', msg));
+        return msg;
       }
       final parts = (content['parts'] as List?) ?? const [];
       Map<String, dynamic>? fnCall;

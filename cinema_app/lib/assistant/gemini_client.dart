@@ -21,6 +21,10 @@ class GeminiClient {
 
   final Map<String, DateTime> _cooldownUntil = {};
 
+  /// Lỗi chi tiết của lần gọi gần nhất, để Brain hiện lên panel cho bạn thấy.
+  /// Ví dụ: missing_key | http_400 | http_403 | http_404 | http_429 | network | empty.
+  String? lastError;
+
   List<String> _keys() {
     const raw = String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
     if (raw.isEmpty) return const [];
@@ -55,6 +59,7 @@ class GeminiClient {
   }) async {
     final keys = _keys();
     if (keys.isEmpty) {
+      lastError = 'missing_key: chưa truyền --dart-define=GEMINI_API_KEY';
       debugPrint('[Gemini] thiếu GEMINI_API_KEY (--dart-define)');
       return null;
     }
@@ -100,16 +105,26 @@ class GeminiClient {
           if (resp.statusCode == 200) {
             final decoded = jsonDecode(resp.body) as Map<String, dynamic>;
             final candidates = decoded['candidates'] as List?;
-            if (candidates == null || candidates.isEmpty) return null;
+            if (candidates == null || candidates.isEmpty) {
+              lastError =
+                  'empty: Gemini trả 200 nhưng không có candidates (${resp.body.length > 200 ? resp.body.substring(0, 200) : resp.body})';
+              return null;
+            }
             final content =
                 candidates.first['content'] as Map<String, dynamic>?;
+            lastError = null;
             return content;
           }
           if (resp.statusCode == 429) {
+            lastError = 'http_429: $model hết quota, đang cooldown + xoay key';
             _cool(model);
             debugPrint('[Gemini] $model 429 -> cooldown + xoay key');
             continue;
           }
+          final snippet = resp.body.length > 300
+              ? resp.body.substring(0, 300)
+              : resp.body;
+          lastError = 'http_${resp.statusCode}: $model -> $snippet';
           if (resp.statusCode == 400 || resp.statusCode == 404) {
             debugPrint(
                 '[Gemini] $model ${resp.statusCode}: ${resp.body.substring(0, resp.body.length > 200 ? 200 : resp.body.length)}');
@@ -118,6 +133,7 @@ class GeminiClient {
           debugPrint('[Gemini] $model ${resp.statusCode}: ${resp.body}');
           break;
         } catch (e) {
+          lastError = 'network: $model lỗi kết nối ($e)';
           debugPrint('[Gemini] $model lỗi: $e');
           break;
         }
