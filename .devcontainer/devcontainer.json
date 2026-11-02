@@ -1,14 +1,33 @@
 {
-  "name": "Flutter",
-  "image": "matspfeiffer/flutter:beta",
+  "name": "Flutter Web (PhimHay24h)",
+  // Image được maintain thường xuyên, Flutter stable + Dart mới.
+  // Bỏ image cũ matspfeiffer/flutter:beta (Dart 2.x, extension Dart-Code cổ
+  // nên lần nào mở Codespace mới cũng phải update tay).
+  "image": "ghcr.io/cirruslabs/flutter:stable",
+
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": {
+      "label": "Flutter Web",
+      "onAutoForward": "notify"
+    }
+  },
+
+  // Chạy 1 lần duy nhất khi tạo Codespace mới:
+  // bật web + tải sẵn package -> mở lên chỉ cần gõ flutter run.
+  "postCreateCommand": "flutter config --enable-web && cd cinema_app && flutter --version && flutter pub get",
+
   "customizations": {
     "vscode": {
       "extensions": [
         "Dart-Code.dart-code",
         "Dart-Code.flutter",
         "GitHub.copilot"
-      ]
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "dart.flutterSdkPath": "/sdks/flutter"
+      }
     }
-  },
-  "postCreateCommand": "flutter pub get"
+  }
 }
