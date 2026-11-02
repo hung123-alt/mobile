@@ -2,115 +2,230 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Phim / the loai / quoc gia: ai cung doc duoc, chi admin ghi (qua Admin SDK).
-    // App mobile Dart chi doc, khong ghi truc tiep.
+    // ============================================================
+    // HAM TRO GIUP
+    // ============================================================
+
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // request.resource la null khi DELETE, chi dung cho create/update.
+    function hasNoPlaintextPassword() {
+      return !("password" in request.resource.data)
+        && !("passwordHash" in request.resource.data)
+        && !("password_hash" in request.resource.data);
+    }
+
+    function existingHasNoPlaintextPassword() {
+      return !("password" in resource.data)
+        && !("passwordHash" in resource.data)
+        && !("password_hash" in resource.data);
+    }
+
+    // Kiem tra chu so huu ho so: doc user_auth_map/{profileIdString}
+    // co field uid trung voi request.auth.uid.
+    // profileIdString LUON LA CHUOI (docId Firestore la chuoi).
+    function ownsProfile(profileIdString) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/user_auth_map/$(profileIdString))
+        && get(/databases/$(database)/documents/user_auth_map/$(profileIdString)).data.uid == request.auth.uid;
+    }
+
+    // ============================================================
+    // ADMIN
+    // ============================================================
+    match /admins/{uid} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // ============================================================
+    // USER AUTH MAP — docId = PROFILE ID (chuoi so, VD "12")
+    // Noi dung: { uid, email, profileId (int), role }
+    // ============================================================
+    match /user_auth_map/{profileId} {
+      allow read: if isSignedIn()
+        && (resource.data.uid == request.auth.uid || isAdmin());
+
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.role != 'admin'
+        && hasNoPlaintextPassword();
+
+      allow update: if isSignedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == resource.data.uid
+        && resource.data.role == request.resource.data.role
+        && hasNoPlaintextPassword();
+
+      allow delete: if isSignedIn() && isAdmin();
+    }
+
+    // ============================================================
+    // PHIM / TAP PHIM / DANH MUC
+    // ============================================================
     match /movies/{slug} {
       allow read: if true;
-      allow write: if false;
+      allow write: if isSignedIn() && isAdmin();
 
-      // Danh gia theo phim: movies/{slug}/ratings/{uidAuth}
-      // RatingService (Dart) dung Firebase Auth uid lam docId.
       match /ratings/{uidAuth} {
         allow read: if true;
-        allow create, update: if request.auth != null
+        allow create, update: if isSignedIn()
           && request.auth.uid == uidAuth
           && request.resource.data.score is int
           && request.resource.data.score >= 1
           && request.resource.data.score <= 10;
-        allow delete: if request.auth != null && request.auth.uid == uidAuth;
+        allow delete: if isSignedIn() && request.auth.uid == uidAuth;
       }
 
-      // Binh luan theo phim (du phong, hien CommentService van goi REST):
-      // movies/{slug}/comments/{commentId}
       match /comments/{commentId} {
         allow read: if true;
-        allow create: if request.auth != null
-          && request.resource.data.userId == request.auth.uid;
-        allow update, delete: if request.auth != null
-          && resource.data.userId == request.auth.uid;
+        allow create: if isSignedIn() && hasNoPlaintextPassword();
+        allow update, delete: if isSignedIn();
       }
 
-      // Tap phim sub-collection (du phong): chi doc
       match /episodes/{episodeId} {
         allow read: if true;
-        allow write: if false;
+        allow write: if isSignedIn() && isAdmin();
       }
     }
 
-    // Top-level episodes: EpisodeGrid.fetchEpisodesForMovie where movieId ==
     match /episodes/{docId} {
       allow read: if true;
-      allow write: if false;
+      allow write: if isSignedIn() && isAdmin();
     }
 
-    // Genres / countries: danh muc doc cong khai
     match /genres/{docId} {
       allow read: if true;
-      allow write: if false;
+      allow write: if isSignedIn() && isAdmin();
     }
     match /countries/{docId} {
       allow read: if true;
-      allow write: if false;
+      allow write: if isSignedIn() && isAdmin();
     }
 
-    // Ho so user: users/{numericId} (VD users/12).
-    // LUU Y THUC TE: docId hien la so int tu tang (_getNextUserId),
-    // KHONG phai Firebase Auth uid, va man hinh login query
-    // where email == truoc khi dang nhap. Vi vay khong the khoa
-    // request.auth.uid == docId, se gay PERMISSION_DENIED.
-    // Tam thoi: cho doc cong khai de login tim user, chan password.
-    // Ghi chi cho phep khi da dang nhap, va cam password duoi moi dang.
+    match /movie_genres/{docId} {
+      allow read: if true;
+      allow write: if isSignedIn() && isAdmin();
+    }
+    match /movie_countries/{docId} {
+      allow read: if true;
+      allow write: if isSignedIn() && isAdmin();
+    }
+
+    // ============================================================
+    // HO SO NGUOI DUNG — docId la so (VD "12"), dang chuoi
+    // ============================================================
     match /users/{docId} {
       allow read: if true;
-      allow create, update: if request.auth != null
-        && !("password" in request.resource.data)
-        && !("passwordHash" in request.resource.data)
-        && !("password_hash" in request.resource.data);
-      allow delete: if false;
 
-      // Du lieu ca nhan: users/{numericId}/favorites, watchlist, notifications
-      // WatchlistProvider dang dung users/{id}/favorites that.
-      match /favorites/{favId} {
-        allow read: if request.auth != null;
-        allow write: if request.auth != null;
-      }
-      match /watchlist/{wlId} {
-        allow read: if request.auth != null;
-        allow write: if request.auth != null;
-      }
-      match /notifications/{notifId} {
-        allow read: if request.auth != null;
-        allow write: if request.auth != null;
-      }
+      allow create: if isSignedIn()
+        && hasNoPlaintextPassword()
+        && (isAdmin() || ownsProfile(docId));
+
+      allow update: if isSignedIn()
+        && hasNoPlaintextPassword()
+        && (isAdmin() || ownsProfile(docId));
+
+      allow delete: if isSignedIn() && isAdmin();
     }
 
-    // Lich su xem CANONICAL: top-level watch_history, docId = {userId}_{movieId}
-    // WatchHistoryProvider.recordWatch dang set() theo kieu nay.
+    // Du lieu ca nhan: users/{profileId}/{favorites,watchlist,notifications}/{itemId}
+    match /users/{uid}/{subcollection}/{itemId} {
+      allow read, write: if isSignedIn()
+        && ownsProfile(uid)
+        && subcollection in ["favorites", "watchlist", "notifications"];
+    }
+
+    // ============================================================
+    // LICH SU XEM — field userId/user_id la INT (id ho so)
+    // ============================================================
     match /watch_history/{docId} {
-      allow read: if request.auth != null;
-      allow create, update, delete: if request.auth != null
-        && !("password" in request.resource.data)
-        && !("passwordHash" in request.resource.data)
-        && !("password_hash" in request.resource.data);
+      allow read: if isSignedIn()
+        && (isAdmin() || ownsProfile(string(resource.data.userId)));
+
+      allow create: if isSignedIn()
+        && hasNoPlaintextPassword()
+        && request.resource.data.userId is int
+        && (isAdmin() || ownsProfile(string(request.resource.data.userId)));
+
+      allow update: if isSignedIn()
+        && hasNoPlaintextPassword()
+        && (isAdmin() || ownsProfile(string(resource.data.userId)));
+
+      allow delete: if isSignedIn()
+        && existingHasNoPlaintextPassword()
+        && (isAdmin() || ownsProfile(string(resource.data.userId)));
     }
 
-    // Bao loi phim top-level: MovieDetailPage._submitErrorReport .add()
-    match /error_reports/{docId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update, delete: if false;
-    }
-
-    // Comment top-level (du phong): ai cung doc, user dang nhap moi ghi
+    // ============================================================
+    // BINH LUAN — field userId la INT (id ho so)
+    // ============================================================
     match /comments/{commentId} {
       allow read: if true;
-      allow create: if request.auth != null
-        && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if request.auth != null
-        && resource.data.userId == request.auth.uid;
+
+      allow create: if isSignedIn()
+        && request.resource.data.userId is int
+        && ownsProfile(string(request.resource.data.userId))
+        && hasNoPlaintextPassword();
+
+      allow update: if isSignedIn()
+        && hasNoPlaintextPassword()
+        && (isAdmin() || ownsProfile(string(resource.data.userId)));
+
+      allow delete: if isSignedIn()
+        && existingHasNoPlaintextPassword()
+        && (isAdmin() || ownsProfile(string(resource.data.userId)));
     }
 
-    // Con lai: khoa het
+    // ============================================================
+    // DANH GIA TOP-LEVEL (du phong)
+    // ============================================================
+    match /ratings/{ratingId} {
+      allow read: if true;
+      allow create, update: if isSignedIn()
+        && request.resource.data.score is int
+        && request.resource.data.score >= 1
+        && request.resource.data.score <= 10;
+      allow delete: if isSignedIn();
+    }
+
+    // ============================================================
+    // THONG BAO
+    // ============================================================
+    match /notifications/{notifId} {
+      allow read: if true;
+      allow create, update, delete: if isSignedIn() && isAdmin();
+    }
+
+    // ============================================================
+    // BAO LOI PHIM
+    // ============================================================
+    match /error_reports/{docId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && hasNoPlaintextPassword();
+      allow update, delete: if isSignedIn() && isAdmin();
+    }
+
+    // ============================================================
+    // YEU THICH / XEM SAU TOP-LEVEL (du phong)
+    // ============================================================
+    match /favorites/{docId} {
+      allow read, write: if isSignedIn();
+    }
+    match /watchlist/{docId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // ============================================================
+    // MAC DINH — khoa het
+    // ============================================================
     match /{document=**} {
       allow read, write: if false;
     }

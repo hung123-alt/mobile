@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/constants/app_constants.dart';
 import '../core/firebase/collection_names.dart';
+import '../core/firebase/user_auth_map_service.dart';
 import '../models/user_model.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -239,6 +240,19 @@ class AuthProvider extends ChangeNotifier {
 
         _currentUser = User.fromJson(userData);
 
+        // Đồng bộ `user_auth_map` để Firestore Rules biết user đang đăng
+        // nhập sở hữu hồ sơ nào / có phải admin không.
+        // (Rules không query được theo field, cần 1 doc tra cứu.)
+        final fbUser = _auth.currentUser;
+        if (fbUser != null && userDocId != null) {
+          await UserAuthMapService.sync(
+            uid: fbUser.uid,
+            email: fbUser.email ?? '',
+            profileId: _currentUser!.id,
+            role: _currentUser!.role,
+          );
+        }
+
         final prefs = await SharedPreferences.getInstance();
         await prefs.setInt('auth_user_id', _currentUser!.id);
         await prefs.setString('auth_user_email', _currentUser!.email);
@@ -355,6 +369,20 @@ class AuthProvider extends ChangeNotifier {
       // Firebase Auth (đã hash + salt bởi Firebase).
       final nextId = await _getNextUserId();
       final now = DateTime.now().toIso8601String();
+
+      // 4a. Đồng bộ `user_auth_map` TRƯỚC khi tạo doc `users`.
+      // Rules yêu cầu `docId == currentProfileId()` khi user tự tạo hồ sơ,
+      // mà `currentProfileId()` đọc từ `user_auth_map`. Nếu tạo `users` trước
+      // thì rules sẽ chặn (chưa có doc map để đối chiếu).
+      final fbUser = _auth.currentUser;
+      if (fbUser != null) {
+        await UserAuthMapService.sync(
+          uid: fbUser.uid,
+          email: fbUser.email ?? cleanEmail,
+          profileId: nextId,
+          role: 'user',
+        );
+      }
 
       final newUserData = <String, dynamic>{
         'id': nextId,

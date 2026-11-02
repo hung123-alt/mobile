@@ -38,6 +38,24 @@ class CollectionNames {
   /// Báo lỗi phim (top-level error_reports)
   static const String errorReports = 'error_reports';
 
+  /// Anh xa Firebase Auth `uid` <-> ho so user trong Firestore.
+  ///
+  /// Firestore Rules khong query duoc theo field, nen can 1 document
+  /// tra cuu de rules biet: user dang dang nhap la ai, co phai admin,
+  /// va so huu du lieu ca nhan nao.
+  /// Doc ID cua collection nay la PROFILE ID (so, dang chuoi, VD "12"),
+  /// noi dung: { uid, email, profileId (int), role }.
+  /// UID NAM TRONG FIELD `uid`, khong phai docId.
+  static const String userAuthMap = 'user_auth_map';
+
+  /// Danh sách uid admin (bootstrap 1 lần trong Firestore Console).
+  ///
+  /// Dùng để khởi tạo tài khoản quản trị đầu tiên: tạo doc với docId
+  /// = uid của admin. Sau đó app tự đồng bộ vào `user_auth_map`.
+  /// Rules KHÔNG cho phép ghi collection này từ client (chỉ Admin SDK /
+  /// Firestore Console) — nếu cho phép, bất kỳ ai cũng tự phong admin.
+  static const String admins = 'admins';
+
   // ============================================================
   // SUB-COLLECTION (dùng khi dữ liệu luôn thuộc về 1 bản ghi cha)
   // ============================================================

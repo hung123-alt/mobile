@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../core/firebase/collection_names.dart';
+import '../core/firebase/user_auth_map_service.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 
@@ -383,6 +384,19 @@ class _AdminUsersTabState extends State<AdminUsersTab> {
                             final nextId = maxId + 1;
                             final nowIso = DateTime.now().toIso8601String();
 
+                            // Bảo mật: mật khẩu do Firebase Auth quản lý
+                            // (đã hash + salt). Tạo tài khoản Auth TRƯỚC,
+                            // rồi mới ghi hồ sơ Firestore — KHÔNG lưu
+                            // plaintext password vào collection `users`.
+                            //
+                            // Dùng instance Auth phụ để KHÔNG ghi đè session
+                            // của admin đang đăng nhập.
+                            await AdminAuthService.createUser(
+                              email: email,
+                              password: pass,
+                              displayName: uname,
+                            );
+
                             await _firestore
                                 .collection(CollectionNames.users)
                                 .doc(nextId.toString())
@@ -390,7 +404,6 @@ class _AdminUsersTabState extends State<AdminUsersTab> {
                               'id': nextId,
                               'username': uname,
                               'email': email,
-                              'password': pass,
                               'role': selectedRole,
                               'isBanned': false,
                               'is_banned': 0,
@@ -584,9 +597,38 @@ class _AdminUsersTabState extends State<AdminUsersTab> {
                               'updatedAt': nowIso,
                               'updated_at': nowIso,
                             };
+
+                            // Bảo mật: KHÔNG ghi plaintext password vào
+                            // Firestore. Client SDK không đổi được mật khẩu
+                            // hộ user khác, nên app gửi email reset mật khẩu
+                            // cho họ tự đặt mật khẩu mới qua deep link.
                             if (newPass.isNotEmpty) {
-                              payload['password'] = newPass;
+                              final targetEmail =
+                                  entry.user.email.trim().isEmpty
+                                      ? email
+                                      : entry.user.email.trim();
+
+                              await AdminAuthService.requestPasswordReset(
+                                email: targetEmail,
+                              );
+
+                              if (ctx.mounted) {
+                                final messenger = ScaffoldMessenger.of(ctx);
+                                Navigator.pop(ctx, 'saved');
+                                messenger.showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Đã gửi email đặt lại mật khẩu đến $targetEmail. '
+                                      'Mật khẩu KHÔNG được lưu trong Firestore.',
+                                    ),
+                                    backgroundColor: Colors.green[700],
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              }
+                              return;
                             }
+
                             await _firestore
                                 .collection(CollectionNames.users)
                                 .doc(entry.docId)
