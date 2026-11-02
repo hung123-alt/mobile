@@ -9,6 +9,7 @@ import '../models/movie_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../services/api_service.dart';
+import '../services/firestore_movie_service.dart';
 import '../services/movie_service.dart';
 import '../services/rating_service.dart';
 import '../widgets/episode_grid.dart';
@@ -107,34 +108,21 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
     }
   }
 
-  // ===== TẢI PHIM LIÊN QUAN =====
+  // ===== TẢI PHIM LIÊN QUAN (đã enrich từ movie_genres/movie_countries) =====
   Future<void> _loadRelatedMovies() async {
     try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection(CollectionNames.movies)
-          .get();
+      final all = await FirestoreMovieService.fetchEnrichedMovies();
 
       final currentGenreIds = widget.movie.genres
           .map((genre) => genre.id)
           .toSet();
 
-      final movies = <Movie>[];
-
-      for (final document in snapshot.docs) {
-        try {
-          final movie = Movie.fromJson(document.data());
-
-          if (!movie.isVisible) continue;
-          if (movie.id == widget.movie.id) continue;
-          if (movie.slug == widget.movie.slug) continue;
-
-          movies.add(movie);
-        } catch (error) {
-          debugPrint(
-            'Không đọc được phim ${document.id}: $error',
-          );
-        }
-      }
+      final movies = all.where((movie) {
+        if (!movie.isVisible) return false;
+        if (movie.id == widget.movie.id) return false;
+        if (movie.slug == widget.movie.slug) return false;
+        return true;
+      }).toList();
 
       int commonGenres(Movie movie) {
         return movie.genres

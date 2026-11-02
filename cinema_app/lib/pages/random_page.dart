@@ -1,12 +1,11 @@
 
 import 'dart:math';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-import '../core/firebase/collection_names.dart';
 import '../models/movie_model.dart';
 import '../services/api_service.dart';
+import '../services/firestore_movie_service.dart';
 import '../services/movie_service.dart';
 import 'movie_detail_page.dart';
 
@@ -57,36 +56,22 @@ class _RandomPageState extends State<RandomPage> {
     super.dispose();
   }
 
-  // ===== TẢI DANH SÁCH PHIM FIREBASE =====
+  // ===== TẢI DANH SÁCH PHIM FIREBASE (đã enrich từ movie_genres/movie_countries) =====
   Future<void> _loadFirebaseMovies() async {
     try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection(CollectionNames.movies)
-          .get();
+      final movies =
+          await FirestoreMovieService.fetchEnrichedMovies();
 
-      final movies = <Movie>[];
       final genres = <int, String>{};
       final countries = <int, String>{};
 
-      for (final document in snapshot.docs) {
-        try {
-          final movie = Movie.fromJson(document.data());
+      for (final movie in movies) {
+        for (final genre in movie.genres) {
+          genres[genre.id] = genre.name;
+        }
 
-          if (!movie.isVisible) continue;
-
-          movies.add(movie);
-
-          for (final genre in movie.genres) {
-            genres[genre.id] = genre.name;
-          }
-
-          for (final country in movie.countries) {
-            countries[country.id] = country.name;
-          }
-        } catch (error) {
-          debugPrint(
-            'Không đọc được phim ${document.id}: $error',
-          );
+        for (final country in movie.countries) {
+          countries[country.id] = country.name;
         }
       }
 

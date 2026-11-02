@@ -3,6 +3,9 @@ import 'base_entity.dart';
 /// Model quốc gia - kế thừa BaseEntity<int>
 ///
 /// Khớp với server/src/modules/countries/countries.entity.ts
+///
+/// Parse mềm giống Genre: dữ liệu migrate MySQL cũ có thể lẫn kiểu
+/// int/String ở field id, nên không dùng `as int?` trực tiếp.
 class Country extends BaseEntity<int> {
   final String slug;
   final bool isVisible;
@@ -15,14 +18,41 @@ class Country extends BaseEntity<int> {
     required this.isVisible,
   }) : super(id: id, name: name, description: description);
 
-  /// Parse từ JSON
-  factory Country.fromJson(Map<String, dynamic> json) {
+  /// Parse từ JSON (hỗ trợ cả camelCase và snake_case, id kiểu lẫn lộn).
+  factory Country.fromJson(Map<String, dynamic> json, {String? docId}) {
+    var parsedId = _parseIntField(json['id'] ?? json['country_id'], 0);
+    if (parsedId == 0 && docId != null) {
+      parsedId = int.tryParse(docId.trim()) ?? 0;
+    }
     return Country(
-      id: json['id'] as int? ?? 0,
-      name: json['name'] as String? ?? '',
-      description: json['description'] as String? ?? '',
-      slug: json['slug'] as String? ?? '',
-      isVisible: json['isVisible'] as bool? ?? true,
+      id: parsedId,
+      name: (json['name'] ?? json['title'])?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      slug: json['slug']?.toString() ?? '',
+      isVisible: _parseBoolField(
+        json['isVisible'] ?? json['is_visible'],
+        true,
+      ),
     );
+  }
+
+  static int _parseIntField(dynamic raw, int fallback) {
+    if (raw is int) return raw;
+    if (raw is num) return raw.toInt();
+    if (raw is String) return int.tryParse(raw.trim()) ?? fallback;
+    if (raw is bool) return raw ? 1 : 0;
+    return fallback;
+  }
+
+  static bool _parseBoolField(dynamic raw, bool fallback) {
+    if (raw is bool) return raw;
+    if (raw is int) return raw != 0;
+    if (raw is num) return raw != 0;
+    if (raw is String) {
+      final v = raw.trim().toLowerCase();
+      if (v == 'true' || v == '1') return true;
+      if (v == 'false' || v == '0') return false;
+    }
+    return fallback;
   }
 }

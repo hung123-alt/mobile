@@ -19,21 +19,58 @@ class Genre extends BaseEntity<int> {
     required this.updatedAt,
   }) : super(id: id, name: name, description: description);
 
-  /// Parse từ JSON. Server trả `name` cho genre (không phải `title`)
-  factory Genre.fromJson(Map<String, dynamic> json) {
+  /// Parse mềm từ Firestore/MySQL cũ: id/slug/is_visible có thể lẫn
+  /// kiểu int-String-bool. Dùng helper thay vì `as int?` để tránh throw
+  /// làm rớt cả document phim khi enrich.
+  factory Genre.fromJson(Map<String, dynamic> json, {String? docId}) {
+    var parsedId = _parseIntField(json['id'] ?? json['genre_id'], 0);
+    if (parsedId == 0 && docId != null) {
+      parsedId = int.tryParse(docId.trim()) ?? 0;
+    }
+    final createdRaw = json['createdAt'] ?? json['created_at'];
+    final updatedRaw = json['updatedAt'] ?? json['updated_at'];
     return Genre(
-      id: json['id'] as int? ?? 0,
-      name: json['name'] as String? ?? '',
-      description: json['description'] as String? ?? '',
-      slug: json['slug'] as String? ?? '',
-      isVisible: json['isVisible'] as bool? ?? true,
-      createdAt: _parseDate(json['createdAt']),
-      updatedAt: _parseDate(json['updatedAt']),
+      id: parsedId,
+      name: (json['name'] ?? json['title'])?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      slug: json['slug']?.toString() ?? '',
+      isVisible: _parseBoolField(
+        json['isVisible'] ?? json['is_visible'],
+        true,
+      ),
+      createdAt: _parseDate(createdRaw),
+      updatedAt: _parseDate(updatedRaw),
     );
+  }
+
+  static int _parseIntField(dynamic raw, int fallback) {
+    if (raw is int) return raw;
+    if (raw is num) return raw.toInt();
+    if (raw is String) return int.tryParse(raw.trim()) ?? fallback;
+    if (raw is bool) return raw ? 1 : 0;
+    return fallback;
+  }
+
+  static bool _parseBoolField(dynamic raw, bool fallback) {
+    if (raw is bool) return raw;
+    if (raw is int) return raw != 0;
+    if (raw is num) return raw != 0;
+    if (raw is String) {
+      final v = raw.trim().toLowerCase();
+      if (v == 'true' || v == '1') return true;
+      if (v == 'false' || v == '0') return false;
+    }
+    return fallback;
   }
 
   static DateTime? _parseDate(dynamic raw) {
     if (raw == null) return null;
+    if (raw is DateTime) return raw;
+    try {
+      final dynamic d = raw;
+      final converted = d.toDate();
+      if (converted is DateTime) return converted;
+    } catch (_) {}
     return DateTime.tryParse(raw.toString());
   }
 }

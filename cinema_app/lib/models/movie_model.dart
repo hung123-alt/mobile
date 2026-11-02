@@ -118,10 +118,55 @@ class Movie extends BaseEntity<int> {
     return '$viewCount';
   }
 
-  /// Parse từ JSON của server
-  factory Movie.fromJson(Map<String, dynamic> json) {
+  /// Copy với thể loại / quốc gia đã gắn từ bảng trung gian.
+  /// Dùng khi enrich phim sau khi đọc thêm `movie_genres` + `movie_countries`.
+  Movie copyWith({
+    List<Genre>? genres,
+    List<Country>? countries,
+  }) {
     return Movie(
-      id: json['id'] as int? ?? 0,
+      id: id,
+      name: name,
+      description: description,
+      slug: slug,
+      posterUrl: posterUrl,
+      bannerUrl: bannerUrl,
+      type: type,
+      status: status,
+      releaseYear: releaseYear,
+      totalEpisodes: totalEpisodes,
+      viewCount: viewCount,
+      avgRating: avgRating,
+      ratingCount: ratingCount,
+      isFeatured: isFeatured,
+      isVisible: isVisible,
+      scheduleDate: scheduleDate,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      genres: genres ?? this.genres,
+      countries: countries ?? this.countries,
+    );
+  }
+
+  /// Parse từ JSON của server / Firestore.
+  ///
+  /// LƯU Ý QUAN TRỌNG (fix rớt phim):
+  /// Dữ liệu migrate từ MySQL cũ sang Firestore không đồng nhất kiểu:
+  /// `id` có thể là int hoặc String, `is_visible` có thể là bool/int/String.
+  /// Dùng `as int?` trực tiếp sẽ throw TypeError khiến trang chủ try/catch
+  /// bỏ qua cả document -> admin đếm 71 phim nhưng app hiện thiếu.
+  /// Vì vậy mọi field số/bool đều parse mềm qua helper bên dưới.
+  factory Movie.fromJson(Map<String, dynamic> json, {String? docId}) {
+    var parsedId = _parseIntField(json['id'] ?? json['movie_id'], 0);
+    if (parsedId == 0 && docId != null) {
+      parsedId = int.tryParse(docId.trim()) ?? 0;
+    }
+    final yearRaw = _parseIntField(
+      json['releaseYear'] ?? json['release_year'],
+      -1,
+    );
+    return Movie(
+      id: parsedId,
       name: json['title'] as String? ?? json['name'] as String? ?? '',
       description: json['description'] as String? ?? '',
       slug: json['slug'] as String? ?? '',
@@ -129,32 +174,92 @@ class Movie extends BaseEntity<int> {
       bannerUrl: (json['bannerUrl'] ?? json['banner_url']) as String?,
       type: json['type'] as String? ?? 'phim_le',
       status: json['status'] as String? ?? 'ongoing',
-      releaseYear: (json['releaseYear'] ?? json['release_year']) as int?,
-      totalEpisodes: (json['totalEpisodes'] ?? json['total_episodes']) as int? ?? 0,
-      viewCount: (json['viewCount'] ?? json['view_count']) as int? ?? 0,
-      avgRating: (json['avgRating'] as num?)?.toDouble() ??
-          (json['avg_rating'] as num?)?.toDouble() ??
-          0.0,
-      ratingCount: (json['ratingCount'] ?? json['rating_count']) as int? ?? 0,
-      isFeatured: json['isFeatured'] as bool? ?? (json['is_featured'] == 1),
-      isVisible: json['isVisible'] as bool? ??
-          (json['is_visible'] != null ? json['is_visible'] == 1 : true),
+      releaseYear: yearRaw < 0 ? null : yearRaw,
+      totalEpisodes: _parseIntField(
+        json['totalEpisodes'] ?? json['total_episodes'],
+        0,
+      ),
+      viewCount: _parseIntField(json['viewCount'] ?? json['view_count'], 0),
+      avgRating: _parseDoubleField(
+        json['avgRating'] ?? json['avg_rating'],
+        0.0,
+      ),
+      ratingCount: _parseIntField(
+        json['ratingCount'] ?? json['rating_count'],
+        0,
+      ),
+      isFeatured: _parseBoolField(
+        json['isFeatured'] ?? json['is_featured'],
+        false,
+      ),
+      isVisible: _parseBoolField(
+        json['isVisible'] ?? json['is_visible'],
+        true,
+      ),
       scheduleDate: _parseDate(json['scheduleDate'] ?? json['schedule_date']),
       createdAt: _parseDate(json['createdAt'] ?? json['created_at']),
       updatedAt: _parseDate(json['updatedAt'] ?? json['updated_at']),
       genres: (json['genres'] as List?)
-              ?.map((e) => Genre.fromJson(e as Map<String, dynamic>))
-              .toList() ??
+              ?.whereType<Map<String, dynamic>>()
+              .map((e) {
+            try {
+              return Genre.fromJson(e);
+            } catch (_) {
+              return null;
+            }
+          }).whereType<Genre>().toList() ??
           <Genre>[],
       countries: (json['countries'] as List?)
-              ?.map((e) => Country.fromJson(e as Map<String, dynamic>))
-              .toList() ??
+              ?.whereType<Map<String, dynamic>>()
+              .map((e) {
+            try {
+              return Country.fromJson(e);
+            } catch (_) {
+              return null;
+            }
+          }).whereType<Country>().toList() ??
           <Country>[],
     );
   }
 
+  /// Parse số nguyên mềm: nhận int/num/String số/bool (Firestore lẫn MySQL cũ).
+  static int _parseIntField(dynamic raw, int fallback) {
+    if (raw is int) return raw;
+    if (raw is num) return raw.toInt();
+    if (raw is String) return int.tryParse(raw.trim()) ?? fallback;
+    if (raw is bool) return raw ? 1 : 0;
+    return fallback;
+  }
+
+  /// Parse bool mềm: nhận bool/int 0-1/String 'true-1' (tránh `1 as bool?` bị throw).
+  static bool _parseBoolField(dynamic raw, bool fallback) {
+    if (raw is bool) return raw;
+    if (raw is int) return raw != 0;
+    if (raw is num) return raw != 0;
+    if (raw is String) {
+      final v = raw.trim().toLowerCase();
+      if (v == 'true' || v == '1') return true;
+      if (v == 'false' || v == '0') return false;
+    }
+    return fallback;
+  }
+
+  static double _parseDoubleField(dynamic raw, double fallback) {
+    if (raw is double) return raw;
+    if (raw is num) return raw.toDouble();
+    if (raw is String) return double.tryParse(raw.trim()) ?? fallback;
+    return fallback;
+  }
+
   static DateTime? _parseDate(dynamic raw) {
     if (raw == null) return null;
+    if (raw is DateTime) return raw;
+    // Firestore Timestamp (tránh import cloud_firestore vào model).
+    try {
+      final dynamic d = raw;
+      final converted = d.toDate();
+      if (converted is DateTime) return converted;
+    } catch (_) {}
     return DateTime.tryParse(raw.toString());
   }
 }
