@@ -6,7 +6,12 @@ import 'package:flutter/material.dart';
 import '../../routes/app_routes.dart';
 
 /// Bắt deep link `cinemahay24h://reset-password?...` khi user bấm link
-
+/// trong email reset mật khẩu (Phương án 1).
+///
+/// Mobile KHÔNG dùng cookie nên không lo CSRF như web NestJS — kẻ xấu
+/// không thể "mượn" session trình duyệt để đổi mật khẩu. Mã `oobCode`
+/// trong link chỉ dùng 1 lần, hết hạn theo Firebase, và việc đổi mật
+/// khẩu gọi thẳng `confirmPasswordReset` của Firebase Auth.
 class DeepLinkService {
   DeepLinkService._();
 

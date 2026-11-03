@@ -1,4 +1,8 @@
 /// Chuẩn hoá mọi link phim admin dán vào: YouTube / VSMOV / mp4 / m3u8 / iframe.
+///
+/// Vấn đề cũ: `embed_player_mobile` whitelist cứng chỉ cho YouTube/Vimeo/Twitch
+/// nên link VSMOV bị chặn trắng màn; link YouTube dạng `watch?v=` dán vào
+/// không chạy vì WebView/iframe cần dạng `/embed/`.
 library;
 
 /// Loại nguồn phát sau khi phân loại.

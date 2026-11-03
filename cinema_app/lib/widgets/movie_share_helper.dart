@@ -5,6 +5,11 @@ import 'package:share_plus/share_plus.dart';
 import '../models/movie_model.dart';
 
 /// Helper chuẩn hoá Chia sẻ phim dùng chung cho Chi tiết + Trang xem.
+///
+/// - Link chuẩn: `https://phimhay24h.app/movie/<slug>` (fallback id khi thiếu slug).
+/// - BottomSheet đẹp: preview tên phim + link, nút Sao chép + nút Chia sẻ hệ thống.
+/// - Nút "Chia sẻ hệ thống" dùng `Share.share` của `share_plus` nếu project đã
+///   thêm dependency; nếu chưa có thì fallback sao chép + snackbar (không crash).
 class MovieShareHelper {
   MovieShareHelper._();
 

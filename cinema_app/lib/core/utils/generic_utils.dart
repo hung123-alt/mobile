@@ -1,7 +1,10 @@
 // ignore_for_file: unintended_html_in_doc_comment
 /// Bộ tiện ích Generic dùng chung cho toàn app.
-/// "Generics với hàm" (tuần 3 PDF slide 26)
-
+///
+/// Áp dụng kiến thức tuần 7 - "Generics với hàm" (tuần 3 PDF slide 26)
+/// mở rộng lên: tìm kiếm, lọc, sắp xếp, gom nhóm.
+///
+/// Mục tiêu: viết 1 lần, dùng cho MỌI kiểu dữ liệu (T).
 library;
 
 /// Tìm phần tử đầu tiên thỏa điều kiện, trả về null nếu không tìm thấy.

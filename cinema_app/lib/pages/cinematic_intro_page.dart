@@ -6,7 +6,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../routes/app_routes.dart';
 
-
+/// Page intro điện ảnh kiểu cốt truyện, hiện sau Đăng nhập / Đăng ký.
+///
+/// - 4 cảnh vuốt ngang, tự chạy mỗi 4s, bấm "Bỏ qua" là vào trang chủ ngay.
+/// - Mỗi cảnh là 1 composition khác nhau: spotlight rạp phim, băng poster
+///   trôi, orb Lina/Seven thở, CTA bắt đầu.
+/// - Không cần asset ngoài, vẽ hoàn toàn bằng code (gradient + painter).
 class CinematicIntroPage extends StatefulWidget {
   const CinematicIntroPage({super.key});
 

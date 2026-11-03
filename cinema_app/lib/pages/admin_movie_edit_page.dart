@@ -8,7 +8,10 @@ import '../widgets/admin_bottom_bar.dart';
 import '../widgets/admin_top_navbar.dart';
 
 /// Trang Chỉnh sửa phim / Thêm phim mới dành cho Admin (theo wireframe).
-
+///
+/// Tái sử dụng [AdminTopNavbar] và [AdminBottomBar].
+/// Kết nối trực tiếp với các bảng `movies`, `genres`, `movie_genres`,
+/// `countries`, `movie_countries`, và `episodes` trên Firestore.
 class AdminMovieEditPage extends StatefulWidget {
   final String? movieDocId;
   final Map<String, dynamic>? initialMovieData;

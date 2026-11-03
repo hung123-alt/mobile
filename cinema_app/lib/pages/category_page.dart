@@ -5,9 +5,12 @@ import '../services/firestore_movie_service.dart';
 import '../widgets/app_top_navbar.dart';
 import 'search_page.dart';
 
-/// Trang Thể loại 
+/// Trang Thể loại — đã fix đếm thiếu phim.
+///
 /// Dùng [FirestoreMovieService.fetchEnrichedMovies] nên số lượng mỗi thẻ
 /// đếm từ bảng trung gian `movie_genres` (đúng với data migrate MySQL cũ),
+/// không còn chỉ đếm mảng nhúng rỗng. Bấm vào thẻ -> sang SearchPage
+/// lọc sẵn theo `genreId` nên Hành động hiện đủ phim thay vì 3 phim.
 class CategoryPage extends StatefulWidget {
   const CategoryPage({super.key});
 

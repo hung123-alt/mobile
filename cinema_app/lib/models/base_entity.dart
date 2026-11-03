@@ -1,4 +1,18 @@
+// ignore_for_file: unintended_html_in_doc_comment
 /// Lớp cơ sở Generic dùng chung cho mọi entity.
+///
+/// Mục đích: tránh lặp lại các thuộc tính giống nhau
+/// (id / name / description) cho từng model.
+///
+/// Theo yêu cầu tuần 7 - Generics trong Dart:
+///   class BaseEntity<T> { ... }
+///
+/// Lớp con chỉ cần khai báo, không viết lại phần chung:
+///   class Movie extends BaseEntity<int> { ... }
+///
+/// Quy ước đặt tên tham số generic:
+///   - 1 chữ cái: T, E, K, V
+///   - Nhiều chữ cái: TKey, TValue
 class BaseEntity<T> {
   final T id;
   final String name;

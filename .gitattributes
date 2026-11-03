@@ -1,0 +1,11 @@
+# Chuan hoa line ending: nen luon dung LF trong repo (Docker/Render/Linux build)
+* text=auto eol=lf
+
+# File nhi binary - giu nguyen
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.apk binary
+*.aab binary
+*.so binary

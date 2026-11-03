@@ -1,16 +1,29 @@
 import 'package:flutter/foundation.dart';
 
-/// LOP 6 - CHONG SPAM/CHONG THROTTLE PHIA CLIENT 
+/// LOP 6 - CHONG SPAM/CHONG THROTTLE PHIA CLIENT (P2/P3).
+///
+/// VÌ SAO CAN?
+/// - Server NestJS da co @nestjs/throttler (20 req/60s/IP), nhung ke xau
+///   van co the bam lien tuc gay lag UI + ton pin/data. Chan ngay tu client
+///   bang debounce + gioi han tan suat goi la lop phong thu re nhat.
+/// - Dung cho nut "Gui binh luan", "Thich", "Cham diem", "Tim kiem".
+///
+/// Cach dung:
+/// ```dart
+/// final limiter = RateLimiter();
+/// onPressed: () => limiter.run('send_comment', () => _submit());
+/// ```
 class RateLimiter {
- 
+  /// Map giu thoi diem goi gan nhat cua moi hanh dong (key -> milliseconds).
   final Map<String, int> _lastRun = <String, int>{};
 
-  
+  /// Khoang cach toi thieu giua 2 lan goi (mac dinh 1200ms).
   final int minIntervalMs;
 
   RateLimiter({this.minIntervalMs = 1200});
 
-
+  /// Tra ve true neu duoc phep chay (da qua khoang cach), false neu bi chan.
+  /// [action] la ham dong bo; neu can async thi await ben trong action.
   bool run(String key, void Function() action, {int? intervalMs}) {
     final wait = intervalMs ?? minIntervalMs;
     final now = DateTime.now().millisecondsSinceEpoch;
