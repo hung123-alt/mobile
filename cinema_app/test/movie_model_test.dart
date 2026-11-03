@@ -1,5 +1,4 @@
-/// 8b — Unit test cho Movie / Genre / Country (parse mem + label).
-/// Bao phu nhom THANH CONG va THAT BAI (8d).
+
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cinema_app/models/country_model.dart';

@@ -1,5 +1,4 @@
-/// 8e — Widget test: SearchInput / CustomButton / LoadingSpinner /
-/// ConfirmDialog / Pagination / RatingStars (bien). Kiem thu giao dien mobile.
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

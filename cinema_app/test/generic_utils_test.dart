@@ -1,5 +1,4 @@
-/// 8b — Unit test cho generic_utils (tim kiem / loc / sap xep / gom nhom).
-/// Cac ham nay la logic dung cho Cau 1: Home / Search / Category / Favorite.
+
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cinema_app/core/utils/generic_utils.dart';

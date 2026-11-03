@@ -1,5 +1,3 @@
-/// 8b — Unit test cho Comment / Episode / Rating (chuc nang Cau 1:
-/// binh luan, tap phim, cham diem). Bao phu THANH CONG + THAT BAI (8d).
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cinema_app/models/comment_model.dart';

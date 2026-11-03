@@ -1,5 +1,4 @@
-/// 8b — Unit test cho Validators (validate form dang nhap / dang ky /
-/// binh luan / cham diem). Bao phu ca nhom THANH CONG va THAT BAI (8d).
+
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cinema_app/core/utils/validators.dart';

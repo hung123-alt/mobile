@@ -1,5 +1,4 @@
-/// 8b + 8a — Unit test cho Repository: bat loi ApiException o ranh gioi I/O.
-/// Moi repository phai TRA VE gia tri an toan thay vi nem loi len UI.
+
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cinema_app/models/comment_model.dart';

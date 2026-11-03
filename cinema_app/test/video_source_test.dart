@@ -1,4 +1,3 @@
-/// 8b — Unit test cho VideoSource (8a: bat link phat loi).
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cinema_app/core/utils/video_source.dart';

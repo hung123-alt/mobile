@@ -1,6 +1,4 @@
-/// 8c — Kiem thu toan bo ung dung (khong can mang / Firebase).
-/// Mo phong luong Cau 1: Home -> Search -> Category -> Favorite/Profile
-/// -> Player thong qua lop pure: search/filter/sort/paginate + routes.
+
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cinema_app/core/utils/generic_utils.dart';

@@ -1,4 +1,3 @@
-/// 8b — Unit test cho PageResult + ApiResponse (phan trang Cau 1).
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cinema_app/models/api_response.dart';

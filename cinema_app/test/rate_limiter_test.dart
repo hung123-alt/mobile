@@ -1,4 +1,3 @@
-/// 8b — Unit test cho RateLimiter + SearchDebouncer (8a: chong spam).
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cinema_app/core/security/rate_limiter.dart';
