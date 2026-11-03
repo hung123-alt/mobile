@@ -60,7 +60,7 @@
 
 ## ✨ Giới thiệu
 
-**PhimHay24h Mobile** là ứng dụng xem phim trực tuyến đa nền tảng viết bằng **Flutter**, chạy trên **Android (APK)**, **Web PWA (Render)** và mọi nền tảng Flutter hỗ trợ. Đây là bản mobile của đồ án môn **Thiết kế Web Nâng cao — Nhóm 4, Phenikaa University**, kế thừa toàn bộ nghiệp vụ của bản web NestJS + React (quản lý phim / tập / bình luận / đánh giá / yêu thích / lịch sử xem / admin) nhưng viết lại hoàn toàn cho mobile-first.
+**PhimHay24h Mobile** là ứng dụng xem phim trực tuyến đa nền tảng viết bằng **Flutter**, chạy trên **Android (APK)**, **Web PWA (Render)** và mọi nền tảng Flutter hỗ trợ.
 
 Ba điểm khiến bản mobile khác biệt:
 
