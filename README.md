@@ -549,10 +549,8 @@ flowchart TB
 
 | Kênh dùng thử | Link |
 |---|---|
-| 📱 **App Demo Cloud (VMOS)** — bấm vào xài trực tiếp | <a href="https://cloud.vmoscloud.com/screen/share/#token=164E-C79D-35E3-4E51-936E-3DEF-99E3-91B9">Mở App Demo Cloud</a> |
-| 🌐 **Bản Web PWA Live** — deploy từ `cinema_app/Dockerfile` + `render.yaml` | <a href="https://phimhay24h.onrender.com">phimhay24h.onrender.com</a> (lần đầu mở chờ 5–20 s để Render "đánh thức" free tier) |
-| 📦 **APK Android** — tab Actions → workflow `build-apk` → `app-release.apk` (~59 MB) | <a href="https://github.com/hung123-alt/mobile/actions">Tải trên GitHub Actions</a> rồi kéo vào Appetize.io (Pixel 8, Android 14) để test không cần máy thật |
-| 🎬 **Video Demo YouTube** | *(Bạn dán link YouTube vào đây — khung giữ chỗ, ví dụ: `https://www.youtube.com/watch?v=...`)* |
+| 📱 **App Demo Cloud (VMOS)** — bấm vào xài trực tiếp | <a href="https://appetize.io/app/b_vqx6bo6a5hirj7fw4av6gyumyi">Mở App Demo Cloud</a> |
+| 🎬 **Video Demo YouTube** | *https://youtu.be/k6eu1jgP_0I* |
 
 ```text
 TODO (bạn cập nhật sau): thay dòng trên bằng link YouTube thật, ví dụ:
