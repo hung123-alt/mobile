@@ -507,7 +507,7 @@ flowchart TB
 
 #### 📝 Đăng ký (Mobile)
 
-![Mobile Đăng ký](docs/images/Movies_Mobile-Dang%20ky.png)
+![Mobile Đăng ký](docs/images/Movies_Mobile-Đăng ký.png)
 
 #### 🔎 Tìm kiếm (Mobile)
 
