@@ -493,30 +493,7 @@ flutter pub get
 flutter run
 ```
 
-### 2) Chạy Web PWA local (giống bản Render)
-
-```bash
-cd cinema_app
-flutter build web --release
-# serve thư mục build/web bằng nginx / python http.server để thử PWA
-```
-
-### 3) Build APK local (giống CI)
-
-```bash
-cd cinema_app
-flutter build apk --release
-# file ra tại: build/app/outputs/flutter-apk/app-release.apk
-```
-
-### 4) Deploy Web lên Render (đã làm sẵn)
-
-- `cinema_app/Dockerfile` (multi-stage: `ghcr.io/cirruslabs/flutter:stable` build web → `nginx:alpine` serve + `nginx.conf`).
-- `render.yaml` (`dockerContext: .`) + `.dockerignore` ở root.
-- Push lên `main` → Render tự build → live tại `https://phimhay24h.onrender.com`.
-- Nhớ thêm domain vào **Firebase Console → Authentication → Authorized domains** (`phimhay24h.onrender.com`).
-
-### 5) Build APK bằng GitHub Actions
+### 2) Build APK bằng GitHub Actions
 
 - Workflow: `.github/workflows/build-apk.yml` (`flutter channel stable`, không set `flutter-version`).
 - Vào **Actions → build-apk → Run workflow** trên nhánh `main` → tải Artifact `app-release-apk`.
