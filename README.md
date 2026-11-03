@@ -31,10 +31,16 @@
 <p align="center">
   <a href="https://phimhay24h.onrender.com"><img src="https://img.shields.io/badge/🌐%20Bản%20Web%20PWA%20Live-phimhay24h.onrender.com-f26522?style=for-the-badge" alt="Web PWA"/></a>
   &nbsp;
+  <a href="https://cloud.vmoscloud.com/screen/share/#token=164E-C79D-35E3-4E51-936E-3DEF-99E3-91B9"><img src="https://img.shields.io/badge/📱%20App%20Demo%20Cloud-VMOS%20Live-00C853?style=for-the-badge&logo=android&logoColor=white" alt="App Demo Cloud"/></a>
+  &nbsp;
   <a href="https://github.com/hung123-alt/mobile/actions"><img src="https://img.shields.io/badge/📦%20Tải%20APK-GitHub%20Actions-2088FF?style=for-the-badge&logo=android&logoColor=white" alt="APK"/></a>
+  &nbsp;
+  <a href="#-demo-video--app-dùng-thử"><img src="https://img.shields.io/badge/🎬%20Video%20Demo-YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Video Demo"/></a>
   &nbsp;
   <a href="#️-cài-đặt--chạy-nhanh"><img src="https://img.shields.io/badge/📖%20Docs-Hướng%20dẫn%20chạy-ffcf9e?style=for-the-badge" alt="Docs"/></a>
 </p>
+
+> 📱 **Dùng thử app ngay không cần cài:** mở link **App Demo Cloud (VMOS)** ở trên là xài trực tiếp trên trình duyệt — kèm bản **Web PWA**, file **APK** và **Video Demo YouTube** trong mục [📸 Demo sản phẩm](#-demo-video--app-dùng-thử).
 
 ![divider](https://capsule-render.vercel.app/api?type=rect&color=0:f26522,100:2b1400&height=3&width=1000)
 
@@ -172,12 +178,12 @@ Ba điểm khiến bản mobile khác biệt:
 
 ## 📁 Cấu trúc dự án (do nhóm tự vẽ)
 
-> 🌳 Cây thư mục dưới đây do nhóm tự vẽ từ mã nguồn thật của nhánh `main` (không copy từ bản web) — phản ánh đúng `cinema_app/lib` hiện tại.
+> 🌳 Cây thư mục dưới do nhóm tự vẽ từ mã nguồn thật của nhánh `main` — **mỗi file có mũi tên → ghi rõ chức năng ngắn gọn**.
 
 <details open>
-<summary><b>📂 Bấm để thu gọn / mở rộng cây thư mục Mobile (cinema_app/)</b></summary>
+<summary><b>📂 Bấm để thu gọn / mở rộng cây thư mục Mobile (cinema_app/) — chi tiết từng file</b></summary>
 
-```
+```text
 mobile/  (repo root — nhánh main)
 ├── .github/workflows/build-apk.yml     → CI: Flutter stable → build app-release.apk (~59MB)
 ├── cinema_app/Dockerfile               → Multi-stage: flutter build web → nginx:alpine serve
@@ -187,80 +193,176 @@ mobile/  (repo root — nhánh main)
 ├── README.md                           → Chính file này
 │
 ├── docs/
-│   └── images/                         → 15 ảnh sơ đồ của nhóm (Class, KT tổng thể, SE, AC, Mobile flows)
-│       ├── ClassDiagrams.drawio.png
-│       ├── KTTongThe.drawio.png
-│       ├── SE_QLLSXEM.drawio.png / SE_QuanLyPhimYeuThich.png / Se_XemChiTietPhim.png
-│       ├── ACLogin.png / AcTimKiemLocPhim.png / AC_BandAcc.png / AC_ChonTapVaPhatVideo.png
-│       └── Movies_Mobile-*.png (Login, Dang ky, search, watch, comment, like_dislike)
+│   └── images/                         → 17 ảnh: 15 sơ đồ nhóm + 2 ảnh web mới (home, admin)
+│       ├── ClassDiagrams.drawio.png    → Sơ đồ lớp: 12 Entity + RefreshToken
+│       ├── KTTongThe.drawio.png        → Kiến trúc tổng thể hệ thống
+│       ├── SE_QLLSXEM.drawio.png       → Sequence: quản lý lịch sử xem
+│       ├── SE_QuanLyPhimYeuThich.png   → Sequence: quản lý phim yêu thích
+│       ├── Se_XemChiTietPhim.png       → Sequence: xem chi tiết phim
+│       ├── ACLogin.png                 → Activity: đăng nhập
+│       ├── AcTimKiemLocPhim.png        → Activity: tìm kiếm & lọc phim
+│       ├── AC_BandAcc.png              → Activity: khóa tài khoản (Admin)
+│       ├── AC_ChonTapVaPhatVideo.png   → Activity: chọn tập & phát video
+│       ├── Movies_Mobile-Login.png     → Mobile flow: đăng nhập
+│       ├── Movies_Mobile-Dang ky.png   → Mobile flow: đăng ký
+│       ├── Movies_Mobile-search.png    → Mobile flow: tìm kiếm
+│       ├── Movies_Mobile-watch.png     → Mobile flow: xem phim
+│       ├── Movies_Mobile-comment.png   → Mobile flow: bình luận
+│       ├── Movies_Mobile-like_dislike.png → Mobile flow: like / dislike
+│       ├── web-home.png                → Ảnh web mới: trang chủ (giao diện User)
+│       └── web-admin.png               → Ảnh web mới: trang Admin (giao diện yêu cầu)
 │
 ├── scripts/                            → Script phụ trợ repo
 │
 └── cinema_app/                         → 📱 APP FLUTTER (thư mục quan trọng nhất)
-    ├── pubspec.yaml                    → flutter 3.x, firebase_auth, cloud_firestore,
+    ├── pubspec.yaml                    → Khai báo phụ thuộc: firebase_auth, cloud_firestore,
     │                                     speech_to_text, flutter_tts, webview_flutter,
     │                                     flutter_secure_storage, share_plus, app_links
     ├── firebase.json                   → Cấu hình Firebase project
-    ├── firestore.rules                 → ⭐ Luật phân quyền (isSignedIn/isAdmin/ownsProfile/...)
+    ├── firestore.rules                 → ⭐ Luật phân quyền: isSignedIn/isAdmin/ownsProfile/...
     ├── lib/
     │   ├── main.dart                   → Entry: init Firebase → Theme → Auth → DeepLink → runApp
     │   ├── firebase_options.dart        → Cấu hình Firebase theo platform (flutterfire)
     │   │
     │   ├── assistant/                  → 🎙️ Trợ lý giọng nói Lina/Seven
-    │   │   ├── assistant_brain.dart     → Bộ não: hiểu lệnh → chọn tool điều hướng
-    │   │   ├── assistant_manager.dart   → Điều phối orb/panel/brain
-    │   │   ├── assistant_orb.dart       → Nút orb nổi (bấm để nói)
-    │   │   ├── assistant_panel.dart     → Panel hội thoại
-    │   │   ├── assistant_persona.dart   → Tính cách Lina/Seven
-    │   │   ├── assistant_settings.dart  → Bật/tắt giọng nói
+    │   │   ├── assistant_brain.dart     → Bộ não: hiểu lệnh nói → chọn tool điều hướng
+    │   │   ├── assistant_manager.dart   → Điều phối orb + panel + brain
+    │   │   ├── assistant_orb.dart       → Nút orb nổi: bấm để nói
+    │   │   ├── assistant_panel.dart     → Panel hội thoại với trợ lý
+    │   │   ├── assistant_persona.dart   → Tính cách & lời thoại Lina/Seven
+    │   │   ├── assistant_settings.dart  → Bật/tắt giọng nói, chọn persona
     │   │   ├── assistant_tools.dart     → Tool: mở tìm kiếm / mở phim / ...
-    │   │   ├── gemini_client.dart       → Gọi Google Gemini
+    │   │   ├── gemini_client.dart       → Gọi API Google Gemini
     │   │   ├── text_normalizer.dart     → Chuẩn hóa tiếng Việt cho STT
-    │   │   └── voice_assistant_service.dart → STT + TTS nền
+    │   │   └── voice_assistant_service.dart → Nền STT + TTS: nghe → nói
     │   │
     │   ├── core/
-    │   │   ├── constants/               → app_colors.dart, app_constants.dart (màu, hằng số)
-    │   │   ├── extensions/              → hex_color.dart
-    │   │   ├── firebase/               → auth_service, firebase_service, collection_names,
-    │   │   │                             deep_link_service, user_auth_map_service
-    │   │   ├── security/               → 🛡️ input_sanitizer (XSS) · rate_limiter (spam)
-    │   │   │                             · secure_token_storage (Keychain/EncryptedPrefs)
-    │   │   ├── theme/                  → app_theme.dart (Light/Dark Material 3)
-    │   │   └── utils/                  → validators (form) · generic_utils (search/filter/sort)
-    │   │                                 · video_source (YouTube ID, HLS/Direct/Iframe)
+    │   │   ├── constants/
+    │   │   │   ├── app_colors.dart      → Bảng màu cinema neon dùng toàn app
+    │   │   │   └── app_constants.dart   → Hằng số: giới hạn comment, debounce, key...
+    │   │   ├── extensions/
+    │   │   │   └── hex_color.dart       → Mở rộng: parse mã hex thành Color
+    │   │   ├── firebase/
+    │   │   │   ├── auth_service.dart    → Đăng ký/đăng nhập/reset qua Firebase Auth
+    │   │   │   ├── firebase_service.dart → Khởi tạo & tiện ích Firebase chung
+    │   │   │   ├── collection_names.dart → Tên collection Firestore tập trung
+    │   │   │   ├── deep_link_service.dart → Lắng nghe deep link quên mật khẩu
+    │   │   │   └── user_auth_map_service.dart → Nối Firebase UID ↔ profileId
+    │   │   ├── security/               → 🛡️ Lớp bảo mật client
+    │   │   │   ├── input_sanitizer.dart → Strip thẻ HTML, cắt 2000 ký tự, chặn XSS
+    │   │   │   ├── rate_limiter.dart    → Chặn bấm spam 1200ms + debounce search 400ms
+    │   │   │   └── secure_token_storage.dart → Token vào Keychain/EncryptedPrefs, logout xóa sạch
+    │   │   ├── theme/
+    │   │   │   └── app_theme.dart       → Theme Light/Dark Material 3
+    │   │   └── utils/
+    │   │       ├── validators.dart      → Validate form: required, email, password, rating 1–10
+    │   │       ├── generic_utils.dart   → Tìm kiếm, lọc, sắp xếp, nhóm, chia trang list
+    │   │       └── video_source.dart    → Parse YouTube ID, phân loại HLS/Direct/Iframe, chặn URL độc
     │   │
-    │   ├── models/                     → Movie, Episode, Comment, Rating, Genre, Country,
-    │   │                                 User, Notification, WatchlistItem, PageResult,
-    │   │                                 ApiResponse, BaseEntity/IdEntity (parse mềm int/String/bool)
-    │   ├── repositories/               → Repository Pattern: auth, movie, comment, watchlist
-    │   │                                 (bắt ApiException ở biên → trả default an toàn)
-    │   ├── services/                   → api_service, auth_service, movie_service,
-    │   │                                 firestore_movie_service, comment/rating/watchlist/
-    │   │                                 history/notification_service
-    │   ├── providers/                  → auth_provider, theme_provider, toast_provider,
-    │   │                                 watchlist_provider, watch_history_provider
-    │   ├── routes/                     → app_routes.dart (tên route) + app_router.dart (bản đồ)
-    │   ├── pages/                      → 17 màn hình:
-    │   │                                 home / search / category / favorite / profile /
-    │   │                                 movie_detail / player / random / watch_history /
-    │   │                                 login / register / forgot+reset_password /
-    │   │                                 account_info / forbidden / cinematic_intro /
-    │   │                                 admin_dashboard + admin_movie_edit
-    │   └── widgets/                    → 30 widget dùng chung:
-    │                                       navigation_shell (Bottom Nav) · app_top/bottom_bar ·
-    │                                       admin_*_tab (movies/users/comments/genres/notifications) ·
-    │                                       movie_card/grid/row_section · hero_banner/trending_carousel ·
-    │                                       episode_grid · comment_section · rating_stars/modal ·
-    │                                       embed_video_player (+mobile/web/stub) · search_input ·
-    │                                       custom_button · confirm_dialog · loading_spinner ·
-    │                                       pagination · error_report_modal · movie_share_helper
+    │   ├── models/                     → Model parse mềm (chịu int/String/bool lộn xộn)
+    │   │   ├── movie_model.dart         → Model phim + label hiển thị
+    │   │   ├── episode_model.dart       → Model tập phim + skip-intro
+    │   │   ├── comment_model.dart       → Model bình luận + reply lồng nhau
+    │   │   ├── rating_model.dart        → Model điểm 1–10
+    │   │   ├── genre_model.dart         → Model thể loại
+    │   │   ├── country_model.dart       → Model quốc gia
+    │   │   ├── user_model.dart          → Model hồ sơ user
+    │   │   ├── notification_model.dart  → Model thông báo
+    │   │   ├── watchlist_item_model.dart → Model mục xem sau / yêu thích
+    │   │   ├── movie_detail_result.dart → Gộp phim + tập + bình luận + rating
+    │   │   ├── page_result.dart         → Phân trang: list + total + page
+    │   │   ├── api_response.dart        → Bọc response API generic
+    │   │   ├── base_entity.dart         → Lớp cha: id + thời gian
+    │   │   └── id_entity.dart           → Entity chỉ có id số
+    │   ├── repositories/               → Repository Pattern: bắt ApiException ở biên
+    │   │   ├── auth_repository.dart     → Đăng nhập/đăng ký, trả default khi lỗi
+    │   │   ├── movie_repository.dart    → Lấy/lọc/random phim, lỗi → list rỗng
+    │   │   ├── comment_repository.dart  → Gửi/xóa bình luận, lỗi → giữ UI cũ
+    │   │   └── watchlist_repository.dart → Toggle yêu thích/xem sau, lỗi → rollback
+    │   ├── services/                   → Gọi API / Firestore trực tiếp
+    │   │   ├── api_service.dart         → Client HTTP + gắn token + timeout
+    │   │   ├── auth_service.dart        → Service auth phía data
+    │   │   ├── movie_service.dart       → Service phim phía data
+    │   │   ├── firestore_movie_service.dart → Đọc/ghi phim trên Firestore
+    │   │   ├── comment_service.dart     → Đọc/ghi bình luận Firestore
+    │   │   ├── rating_service.dart      → Ghi điểm 1–10 lên Firestore
+    │   │   ├── watchlist_service.dart   → Đọc/ghi yêu thích & xem sau
+    │   │   ├── history_service.dart     → Lưu tiến độ xem từng tập
+    │   │   └── notification_service.dart → Đọc thông báo
+    │   ├── providers/                  → State: singleton + ListenableBuilder
+    │   │   ├── auth_provider.dart       → Phiên đăng nhập + checkAuthStatus
+    │   │   ├── theme_provider.dart      → Dark/Light + lưu SharedPreferences
+    │   │   ├── toast_provider.dart      → Toast báo thành công/thất bại
+    │   │   ├── watchlist_provider.dart  → State yêu thích / xem sau
+    │   │   └── watch_history_provider.dart → State lịch sử + gợi ý xem tiếp
+    │   ├── routes/
+    │   │   ├── app_routes.dart          → Tên route tập trung
+    │   │   └── app_router.dart          → Bản đồ route → màn hình + guard
+    │   ├── pages/                      → 17 màn hình
+    │   │   ├── home_page.dart           → Trang chủ: banner + trending + list
+    │   │   ├── search_page.dart         → Tìm theo từ khóa + mở chi tiết
+    │   │   ├── category_page.dart       → Lọc thể loại/quốc gia/năm/loại phim
+    │   │   ├── favorite_page.dart       → List phim yêu thích
+    │   │   ├── profile_page.dart        → Tài khoản + đổi theme + đăng xuất
+    │   │   ├── movie_detail_page.dart   → Info phim + tập + bình luận + sao
+    │   │   ├── player_page.dart         → Phát video + chuyển tập + báo lỗi
+    │   │   ├── random_page.dart         → Random nhanh & nâng cao
+    │   │   ├── watch_history_page.dart  → Lịch sử + nút xem tiếp
+    │   │   ├── login_page.dart          → Đăng nhập Firebase
+    │   │   ├── register_page.dart       → Đăng ký tài khoản
+    │   │   ├── forgot_password_page.dart → Gửi mail quên mật khẩu
+    │   │   ├── reset_password_page.dart → Đặt lại mật khẩu qua deep link
+    │   │   ├── account_info_page.dart   → Xem/sửa thông tin cá nhân
+    │   │   ├── forbidden_page.dart      → Trang 403 khi thiếu quyền
+    │   │   ├── cinematic_intro_page.dart → Màn intro điện ảnh lúc mở app
+    │   │   ├── admin_dashboard_page.dart → Dashboard quản trị
+    │   │   └── admin_movie_edit_page.dart → Thêm/sửa phim (Admin)
+    │   └── widgets/                    → 30 widget dùng chung
+    │       ├── navigation_shell.dart    → Bottom Nav 5 tab chính
+    │       ├── app_top_navbar.dart      → Thanh topbar user
+    │       ├── app_bottom_bar.dart      → Thanh bottom user
+    │       ├── admin_top_navbar.dart    → Topbar khu vực admin
+    │       ├── admin_bottom_bar.dart    → Bottom khu vực admin
+    │       ├── admin_movies_tab.dart    → Tab quản lý phim
+    │       ├── admin_users_tab.dart     → Tab quản lý user / khóa acc
+    │       ├── admin_comments_tab.dart  → Tab duyệt bình luận
+    │       ├── admin_genres_tab.dart    → Tab quản lý thể loại/quốc gia
+    │       ├── admin_notifications_tab.dart → Tab gửi thông báo
+    │       ├── movie_card.dart          → Thẻ phim nhỏ
+    │       ├── movie_grid.dart          → Lưới phim
+    │       ├── movie_row_section.dart   → Hàng phim ngang theo thể loại
+    │       ├── hero_banner_carousel.dart → Banner xoay phim hot
+    │       ├── trending_carousel.dart   → Carousel trending
+    │       ├── episode_grid.dart        → Lưới chọn tập
+    │       ├── comment_section.dart     → Khung bình luận + reply
+    │       ├── rating_stars.dart        → Sao hiển thị 1–10
+    │       ├── rating_modal.dart        → Popup chấm sao
+    │       ├── embed_video_player.dart  → Router chọn player theo platform
+    │       ├── embed_player_mobile.dart → Player cho Android/iOS
+    │       ├── embed_player_web.dart    → Player cho Web PWA
+    │       ├── embed_player_stub.dart   → Player giả khi test
+    │       ├── search_input.dart        → Ô tìm kiếm + debounce
+    │       ├── custom_button.dart       → Nút bấm style neon
+    │       ├── confirm_dialog.dart      → Hộp xác nhận xóa/khóa
+    │       ├── loading_spinner.dart     → Vòng xoay tải
+    │       ├── pagination.dart          → Phân trang list
+    │       ├── error_report_modal.dart  → Popup báo lỗi video
+    │       └── movie_share_helper.dart  → Chia sẻ phim + tạo deep link
     │
     ├── test/                           → 🧪 13 file, 157 ca — xem mục Kiểm thử 8a–8e
-    │   ├── validators_test · input_sanitizer_test · video_source_test
-    │   ├── generic_utils_test · rate_limiter_test
-    │   ├── movie_model_test · models_extra_test · page_result_api_response_test
-    │   ├── repositories_test · common_widgets_test · app_flow_test
-    │   └── movie_interactions_test · widget_test
+    │   ├── validators_test.dart         → Test validate form, email, rating
+    │   ├── input_sanitizer_test.dart    → Test cắt HTML, chặn XSS
+    │   ├── video_source_test.dart       → Test parse YouTube, lọc URL độc
+    │   ├── generic_utils_test.dart      → Test search/filter/sort/chunk
+    │   ├── rate_limiter_test.dart       → Test chặn spam + debounce
+    │   ├── movie_model_test.dart        → Test parse mềm movie JSON
+    │   ├── models_extra_test.dart       → Test comment/episode/rating/watchlist
+    │   ├── page_result_api_response_test.dart → Test bọc response + phân trang
+    │   ├── repositories_test.dart       → Test bắt lỗi biên repository
+    │   ├── common_widgets_test.dart     → Test SearchInput/Button/Spinner/Dialog/...
+    │   ├── app_flow_test.dart           → Test flow Home→Search→Chi tiết→Player
+    │   ├── movie_interactions_test.dart → Test yêu thích/đánh giá/lịch sử
+    │   └── widget_test.dart             → Test smoke mặc định
     ├── android/ ios/ web/ windows/ linux/ macos/  → Platform folders (web/ đã build PWA)
     └── tool/                           → Tool build nội bộ
 ```
@@ -441,10 +543,29 @@ flowchart TB
 
 ---
 
-### 📸 Demo sản phẩm
+### 📸 Demo video & App dùng thử
 
-- 🌐 **Web PWA Live:** `https://phimhay24h.onrender.com` — deploy từ `cinema_app/Dockerfile` + `render.yaml`. Lần đầu mở chờ 5–20 s để Render "đánh thức" (free tier sleep).
-- 📦 **APK Android:** tab **Actions** của repo → workflow `build-apk` → tải `app-release.apk` (~59 MB) → kéo vào Appetize.io (Pixel 8, Android 14) để test không cần máy thật.
+> 📱 **Bấm là xài — không cần cài máy ảo:** mở link VMOS dưới đây là điều khiển được app thật ngay trên trình duyệt.
+
+| Kênh dùng thử | Link |
+|---|---|
+| 📱 **App Demo Cloud (VMOS)** — bấm vào xài trực tiếp | <a href="https://cloud.vmoscloud.com/screen/share/#token=164E-C79D-35E3-4E51-936E-3DEF-99E3-91B9">Mở App Demo Cloud</a> |
+| 🌐 **Bản Web PWA Live** — deploy từ `cinema_app/Dockerfile` + `render.yaml` | <a href="https://phimhay24h.onrender.com">phimhay24h.onrender.com</a> (lần đầu mở chờ 5–20 s để Render "đánh thức" free tier) |
+| 📦 **APK Android** — tab Actions → workflow `build-apk` → `app-release.apk` (~59 MB) | <a href="https://github.com/hung123-alt/mobile/actions">Tải trên GitHub Actions</a> rồi kéo vào Appetize.io (Pixel 8, Android 14) để test không cần máy thật |
+| 🎬 **Video Demo YouTube** | *(Bạn dán link YouTube vào đây — khung giữ chỗ, ví dụ: `https://www.youtube.com/watch?v=...`)* |
+
+```text
+TODO (bạn cập nhật sau): thay dòng trên bằng link YouTube thật, ví dụ:
+🎬 Video Demo: https://www.youtube.com/watch?v=YOUR_VIDEO_ID
+```
+
+#### 🌐 Trang chủ Web Phim — giao diện User
+
+![Trang chủ Web](docs/images/web-home.png)
+
+#### 🛠️ Trang Admin — giao diện yêu cầu (quản trị)
+
+![Trang Admin](docs/images/web-admin.png)
 
 <div align="center">
 
@@ -513,7 +634,8 @@ flutter run
 |-----------|------|------------------|-------------------|
 | Trần Quốc Việt Hùng | 24100015 | [hung123-alt](https://github.com/hung123-alt) | Search + Category + Favorite + Profile, CI APK, deploy Render, README |
 | Bùi Quang Hưng | 24100129 | [hungdzx1](https://github.com/hungdzx1) | Home + Setup, Firebase, theme |
-| Trần Phương Nam | 24100511 | [24100511-jpg](https://github.com/24100511-jpg) | Backend NestJS tham khảo, sơ đồ hệ thống |
+| Doãn Bùi Đình Hiếu | 24100221 | — | Phụ trách (bạn bổ sung sau) |
+| Nguyễn Văn Thành Hưng | 24100101 | — | Phụ trách (bạn bổ sung sau) |
 
 </div>
 
