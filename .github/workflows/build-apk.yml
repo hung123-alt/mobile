@@ -1,0 +1,73 @@
+name: Build APK (Android)
+
+# Build ra file .apk de demo tren may ao (Appetize.io) hoac cai truc tiep
+# len may Android that.
+#
+# Uu diem: KHONG can cai Android Studio local - GitHub Actions tu dong cai
+# Android SDK + JDK roi build. Chi can push code len roi tai Artifact.
+#
+# QUAN TRONG: dung `flutter build apk --release` (KHONG dung --split-per-abi)
+# vi may ao Appetize can file universal co ca x86_64.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "cinema_app/**"
+      - ".github/workflows/build-apk.yml"
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: "API_BASE_URL (de rong = mac dinh localhost:3000/api, app van chay vi fallback ve Firebase)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    name: Build APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cai Flutter stable
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: stable
+          channel: stable
+          cache: true
+
+      - name: Lay dependencies
+        working-directory: cinema_app
+        run: flutter pub get
+
+      - name: Build APK release
+        working-directory: cinema_app
+        run: |
+          ARGS="--release"
+          if [ -n "${{ inputs.api_base_url }}" ]; then
+            ARGS="$ARGS --dart-define=API_BASE_URL=${{ inputs.api_base_url }}"
+          fi
+          echo "flutter build apk $ARGS"
+          flutter build apk $ARGS
+
+      - name: Kiem tra file APK
+        working-directory: cinema_app
+        run: |
+          ls -lh build/app/outputs/flutter-apk/
+          echo ""
+          echo "### File dung de upload len Appetize.io:"
+          echo "### build/app/outputs/flutter-apk/app-release.apk"
+          echo "### (KHONG dung file -split-per-abi, may ao Appetize can file universal)"
+
+      - name: Upload APK len Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: phimhay24h-apk
+          path: cinema_app/build/app/outputs/flutter-apk/*.apk
+          if-no-files-found: error
+          retention-days: 30
