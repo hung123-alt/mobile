@@ -3,7 +3,7 @@
 #
 #  Render đọc file này ở GỐC repo.
 #  Deploy: Render Dashboard → New → Blueprint → chọn repo này
-#  (hoặc New → Web Service → Runtime: Docker → branch: feature/demo-render)
+#  (hoặc New → Web Service → Runtime: Docker)
 #
 #  App đọc dữ liệu từ Firebase (Firestore + Auth) nên KHÔNG cần
 #  biến môi trường nào cho backend.
@@ -13,8 +13,10 @@ services:
   - type: web
     name: phimhay24h
     runtime: docker
+    # Dockerfile nằm trong thư mục cinema_app/ nhưng Context = gốc repo.
+    # Dockerfile tự dò vị trí app Flutter nên build đúng với context này.
     dockerfilePath: ./cinema_app/Dockerfile
-    dockerContext: ./cinema_app
+    dockerContext: .
     branch: feature/demo-render
     plan: free
     autoDeploy: true

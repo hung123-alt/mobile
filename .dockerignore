@@ -1,0 +1,36 @@
+# .dockerignore cho ROOT repo — dùng khi Docker Context = gốc repo
+# (Render: Docker Context = "." , Dockerfile Path = ./cinema_app/Dockerfile)
+#
+# Mục tiêu: gửi lên Render nhẹ nhất, chỉ giữ phần app Flutter.
+
+# Git
+.git
+.gitignore
+.gitattributes
+.github
+
+# Backend NestJS — app Flutter không dùng
+server/
+
+# Script upload Firestore
+scripts/
+
+# Docs
+*.md
+!cinema_app/README.md
+.devcontainer/
+
+# ---- cinema_app: loại bỏ artifact build local ----
+cinema_app/build/
+cinema_app/.dart_tool/
+cinema_app/.pub-cache/
+cinema_app/.pub/
+cinema_app/.flutter-plugins-dependencies
+cinema_app/.metadata
+cinema_app/tool/
+cinema_app/test/
+cinema_app/android/
+cinema_app/ios/
+cinema_app/linux/
+cinema_app/macos/
+cinema_app/windows/
